@@ -3,6 +3,21 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.views import LoginView
+from django.urls import reverse
+
+class CustomLoginView(LoginView):
+    def get_success_url(self):
+        user = self.request.user
+        user_groups = user.groups.values_list('name', flat=True)
+        if user.is_superuser or 'Admin' in user_groups:
+            return reverse('activos:admin_dashboard')
+        elif 'Logística' in user_groups:
+            return reverse('activos:logistica_dashboard')
+        elif 'Lectura' in user_groups:
+            return reverse('activos:lectura_dashboard')
+        else:
+            return reverse('activos:home')
 
 @login_required
 def user_list(request):

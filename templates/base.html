@@ -60,7 +60,7 @@
         </div>
 
         <!-- Admin -->
-        {% if user.groups.filter(name='Admin').exists %}
+        {% if user_is_admin %}
             <a href="{% url 'activos:admin_dashboard' %}">
                 <i class="fa-solid fa-chart-line"></i> Dashboard
             </a>
@@ -77,21 +77,17 @@
                 <i class="fa-solid fa-tags"></i> Categorías
             </a>
 
-            <a href="{% url 'activos:ubicaciones' %}">
+            <a href="{% url 'activos:ubicacion_list' %}">
                 <i class="fa-solid fa-location-dot"></i> Ubicaciones
             </a>
 
             <a href="{% url 'activos:movimientos' %}">
                 <i class="fa-solid fa-exchange-alt"></i> Movimientos
             </a>
-
-            <a href="{% url 'reportes:index' %}">
-                <i class="fa-solid fa-file-excel"></i> Reportes
-            </a>
         {% endif %}
 
         <!-- LOGÍSTICA -->
-        {% if user.groups.filter(name='Logística').exists %}
+        {% if user_is_logistica %}
             <a href="{% url 'activos:logistica_dashboard' %}">
                 <i class="fa-solid fa-warehouse"></i> Dashboard
             </a>
@@ -106,7 +102,7 @@
         {% endif %}
 
         <!-- LECTURA -->
-        {% if user.groups.filter(name='Lectura').exists %}
+        {% if user_is_lectura %}
             <a href="{% url 'activos:lectura_dashboard' %}">
                 <i class="fa-solid fa-chart-pie"></i> Dashboard
             </a>

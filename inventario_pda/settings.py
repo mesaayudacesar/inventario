@@ -13,6 +13,9 @@ ALLOWED_HOSTS = ['inventario-6hyb.onrender.com', 'localhost', '127.0.0.1']
 
 CSRF_TRUSTED_ORIGINS = ['https://inventario-6hyb.onrender.com']
 
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 
 INSTALLED_APPS = [

@@ -1,4 +1,4 @@
-# Sistema de Inventario de Activos (Django + SQLite + Render)
+# Sistema de Inventario de Activos PDA (Django + SQLite + Bootstrap)
 
 ## Descripción del Proyecto
 
@@ -10,72 +10,80 @@ El objetivo es permitir:
 - Consultarlos según permisos.
 - Mantener un historial de movimientos.
 - Exportar los datos en Excel.
-- Administrar usuarios y roles.
+- Administrar usuarios, categorías y ubicaciones.
+SQLite
+Está construido con Django 5.2, usando  como base de datos, Bootstrap 5 para la interfaz y FontAwesome para iconos.
 
-Está construido con Django, usando SQLite como base de datos (ideal para Render Free) y Bootstrap para la interfaz.
+## Flujo del Aplicativo
+
+### 1. Autenticación y Roles
+- **Login**: Los usuarios inician sesión en `/` (usuarios/login.html).
+- **Redirección Automática**: Después del login, el sistema redirige según el grupo del usuario:
+  - **Admin**: `/activos/admin-dashboard/` (Panel administrativo completo).
+  - **Logística**: `/activos/logistica-dashboard/` (Dashboard de logística).
+  - **Lectura**: `/activos/lectura-dashboard/` (Dashboard de solo lectura).
+  - **Sin grupo**: `/activos/` (Lista de activos).
+- **Logout**: Cierra sesión y redirige a login.
+
+### 2. Paneles por Rol
+- **Admin Dashboard**: Muestra estadísticas (total activos, asignados, en bodega, dados de baja) y enlaces a todas las funcionalidades: gestión de activos, usuarios, categorías, ubicaciones, movimientos y reportes.
+- **Logística Dashboard**: Estadísticas de activos por estado y movimientos recientes.
+- **Lectura Dashboard**: Solo muestra el total de activos.
+
+### 3. Gestión de Activos
+- **Lista de Activos**: Vista principal en `/activos/` (home.html).
+- **CRUD Activos**: Crear, ver detalle, editar, eliminar activos (solo Admin para crear/eliminar).
+- **Movimientos**: Registrar movimientos de activos (ingreso, salida, transferencia, cambio de estado).
+- **Historial**: Ver historial de cambios por activo.
+
+### 4. Gestión Administrativa (Solo Admin)
+- **Usuarios**: Listar, crear, editar, resetear contraseña de usuarios.
+- **Categorías**: CRUD de categorías de activos.
+- **Ubicaciones**: CRUD de ubicaciones (sedes, bodegas, etc.).
+- **Reportes**: Inventario por sede, exportar a Excel.
+
+### 5. Navegación
+- **Sidebar**: Barra lateral con enlaces según permisos del usuario.
+- **Base Template**: Plantilla base con navegación, mensajes de Django y estilos Bootstrap.
 
 ## Características Principales
 
 ### 1. Sistema de Roles
 
-El sistema tiene 4 roles principales:
+El sistema tiene 3 roles principales (grupos de Django):
 
-| Rol          | Descripción |
-|--------------|-------------|
-| Administrador | Control total del sistema. CRUD completo, crea usuarios, modifica roles, exporta datos. |
-| Consulta     | Solo puede leer información. No crea ni edita nada. |
-| Bodega       | Registra activos nuevos y edita datos relacionados con ingreso a bodega. |
-| Asignador    | Asigna los activos a usuarios, llena campos de asignación. |
+| Rol          | Descripción | Dashboard |
+|--------------|-------------|-----------|
+| Admin        | Control total: CRUD activos, usuarios, categorías, ubicaciones, movimientos, reportes. | admin_dashboard.html |
+| Logística    | Gestiona movimientos y estados de activos. | logistica_dashboard.html |
+| Lectura      | Solo lectura de activos. | lectura_dashboard.html |
 
-Cada rol tiene permisos basados en los campos que debe manipular.
+Permisos basados en grupos, con decoradores `@login_required` y checks de grupo en vistas.
 
-### 2. Gestión de Activos
+### 2. Modelos de Datos
 
-Los activos tienen la siguiente información:
+#### Activo
+Campos principales: item (auto), documento, nombres_apellidos, imei1, imei2, sn, mac_superflex, articulo, marca (choices), activo, cargo, estado, fecha_confirmacion, responsable, identificacion, zona, ubicacion (FK), articulo_fk (FK), observacion, punto_venta, codigo_centro_costo, centro_costo_punto, fecha_salida_bodega.
 
-- ITEM (consecutivo)
-- DOCUMENTO
-- NOMBRES Y APELLIDOS
-- IMEI 1
-- IMEI 2 (opcional)
-- S/N
-- MAC SUPERFLEX
-- ARTÍCULO (defecto: MAQUINA)
-- MARCA (opciones: SUNMI V1 / SUNMI V2 / SUNMI V2 PRO / N910 / NEWLAND GRIS)
-- ACTIVO
-- CARGO (defecto: vendedor ambulante)
-- ESTADO (defecto: activo confirmado)
-- FECHA DE CONFIRMACIÓN (defecto: hoy)
-- RESPONSABLE
-- IDENTIFICACIÓN
-- ZONA (defecto: Valledupar)
-- OBSERVACIÓN (defecto: VERIFICADO)
-- PUNTO DE VENTA
-- CÓDIGO CENTRO DE COSTO
-- CENTRO DE COSTO PUNTO
-- FECHA DE SALIDA DE BODEGA
+#### Movimiento
+Registra movimientos: tipo (ingreso/salida/transferencia/cambio_estado), activo, usuario, ubicaciones origen/destino, estados anterior/nuevo, descripcion, fecha.
 
-### 3. Historial de Cambios
+#### Historial
+Auditoría: activo, usuario, campo_cambiado, valor_anterior, valor_nuevo, fecha.
 
-El sistema registra cada cambio realizado sobre un activo:
-- Qué usuario realizó la acción
-- Antes y después del cambio
-- Fecha y hora
-- Tipo de acción (creación, edición, asignación, cambio de estado, etc.)
+#### Ubicacion, Categoria, Articulo
+Modelos auxiliares para clasificar activos.
 
-### 4. Exportación a Excel
+### 3. Exportación y Reportes
+- **Exportar Excel**: Descarga completa del inventario en XLSX usando openpyxl.
+- **Reporte por Sede**: Filtrar activos por ubicación.
+- **CSV**: Opción adicional para exportar.
 
-El sistema permite exportar el inventario completo o filtrado usando:
-- django-import-export, o
-- Exportación personalizada en openpyxl.
-
-### 5. Panel Admin
-
-Django Admin está habilitado para el rol Administrador, con:
-- CRUD de activos
-- CRUD de usuarios
-- Gestión de roles (grupos)
-- Exportación
+### 4. Interfaz de Usuario
+- **Responsive**: Bootstrap 5 con sidebar fija y contenido desplazable.
+- **Iconos**: FontAwesome para navegación.
+- **Mensajes**: Alertas de Django para feedback.
+- **Context Processor**: Variables globales para grupos de usuario en templates.
 
 ## Estructura del Proyecto
 
@@ -83,112 +91,89 @@ Django Admin está habilitado para el rol Administrador, con:
 inventario_pda/
 │
 ├── activos/                # App principal
-│   ├── models.py           # Modelos: Activo, Historial
-│   ├── views.py
-│   ├── urls.py
-│   ├── forms.py
-│   ├── admin.py
-│   └── templates/
+│   ├── models.py           # Modelos: Activo, Movimiento, Historial, Ubicacion, Categoria, Articulo
+│   ├── views.py            # Vistas: CRUD Activos, Dashboards, Movimientos, etc.
+│   ├── urls.py             # URLs: home, admin_dashboard, CRUDs, etc.
+│   ├── admin.py            # Django Admin
+│   └── templates/activos/  # Templates: home.html, admin_dashboard.html, etc.
 │
-├── usuarios/               # App para roles y permisos
-│   ├── models.py
-│   ├── signals.py
+├── usuarios/               # App de usuarios
+│   ├── models.py           # Sin modelos adicionales (usa User de Django)
+│   ├── views.py            # CustomLoginView, user_list, user_create, etc.
+│   ├── urls.py             # login, logout, user management
+│   └── templates/usuarios/ # login.html, user_list.html, etc.
 │
-├── settings.py
-├── urls.py
-├── requirements.txt
-└── Procfile                # Para Render
+├── inventario_pda/         # Configuración principal
+│   ├── settings.py         # Config: INSTALLED_APPS, TEMPLATES, LOGIN_REDIRECT_URL, etc.
+│   ├── urls.py             # Include activos.urls, usuarios.urls
+│   ├── context_processors.py # user_groups para templates
+│   ├── wsgi.py
+│   └── asgi.py
+│
+├── templates/              # Templates globales
+│   └── base.html           # Template base con sidebar
+│
+├── static/                 # Archivos estáticos (CSS, JS, imágenes)
+├── requirements.txt        # Dependencias: Django, openpyxl, gunicorn
+├── manage.py
+├── db.sqlite3              # Base de datos
+└── README.md
 ```
-
-## Modelos
-
-### Tabla: Activo
-
-| Campo               | Tipo             | Quién lo llena         | Default              |
-|---------------------|------------------|------------------------|----------------------|
-| item                | Integer (auto)   | Automático             | consecutivo          |
-| documento           | CharField        | Asignador              | —                    |
-| nombres_apellidos   | CharField        | Asignador              | —                    |
-| imei1               | CharField        | Bodega / Admin         | —                    |
-| imei2               | CharField (null) | Bodega / Admin         | opcional             |
-| sn                  | CharField        | Bodega                 | —                    |
-| mac_superflex       | CharField        | Asignador/Admin        | —                    |
-| articulo            | CharField        | Sistema                | "MAQUINA"            |
-| marca               | ChoiceField      | Bodega/Asignador/Admin | (5 opciones)         |
-| activo              | CharField        | Bodega                 | —                    |
-| cargo               | CharField        | Asignador              | "vendedor ambulante" |
-| estado              | CharField        | Bodega/Admin           | "activo confirmado"  |
-| fecha_confirmacion  | DateField        | Sistema                | hoy                  |
-| responsable         | CharField        | Bodega                 | —                    |
-| identificacion      | CharField        | Bodega                 | —                    |
-| zona                | CharField        | Sistema                | "Valledupar"         |
-| observacion         | TextField        | Sistema                | "VERIFICADO"         |
-| punto_venta         | CharField        | Asignador              | —                    |
-| codigo_centro_costo | CharField        | Asignador              | —                    |
-| centro_costo_punto  | CharField        | Asignador              | —                    |
-| fecha_salida_bodega | DateField        | Bodega                 | —                    |
-| fecha_creacion      | DateTime         | Sistema                | auto                 |
-| fecha_modificacion  | DateTime         | Sistema                | auto                 |
-
-### Tabla: Historial
-
-Registra todos los cambios a activos.
-
-| Campo          | Tipo      |
-|----------------|-----------|
-| activo (FK)    | Activo    |
-| usuario        | Usuario   |
-| campo_cambiado | CharField |
-| valor_anterior | Text      |
-| valor_nuevo    | Text      |
-| fecha          | DateTime  |
-
-### Tabla: Usuario / Roles
-
-Usa grupos de Django:
-
-Grupos:
-- Administrador
-- Consulta
-- Bodega
-- Asignador
-
-Cada grupo tendrá permisos específicos sobre:
-- Crear
-- Editar
-- Asignar
-- Consultar
-- Exportar
 
 ## Instalación y Ejecución Local
 
 ```bash
+# Clonar repositorio
+git clone <repo-url>
+cd inventario_pda
+
+# Instalar dependencias
 pip install -r requirements.txt
+
+# Migrar base de datos
 python manage.py migrate
+
+# Crear superusuario
 python manage.py createsuperuser
+
+# Ejecutar servidor
 python manage.py runserver
 ```
 
+Acceder a http://127.0.0.1:8000/
+
 ## Despliegue en Render
 
-1. Subir el proyecto a GitHub
-2. Crear servicio Web Service → "Deploy from repo"
-3. En Build Command:
+1. Subir el proyecto a GitHub.
+2. Crear servicio Web Service en Render → "Deploy from repo".
+3. **Build Command**:
    ```
    pip install -r requirements.txt
    ```
-4. En Start Command:
+4. **Start Command**:
    ```
    gunicorn inventario_pda.wsgi
    ```
-5. Añadir variable:
+5. Variables de entorno:
    ```
    PYTHON_VERSION = 3.10
+   DJANGO_SETTINGS_MODULE = inventario_pda.settings
+   SECRET_KEY = <tu-secret-key>
+   DEBUG = False
    ```
 
-## Soporte y Mejoras Futuras
+## Tecnologías Utilizadas
 
-- API REST para apps móviles.
-- Dashboard con gráficas.
-- Módulo de generación de reportes Excel.
-- Control de inventario de consumibles u otros equipos.
+- **Backend**: Django 5.2 (Python 3.10)
+- **Base de Datos**: SQLite
+- **Frontend**: Bootstrap 5, FontAwesome, HTML5
+- **Exportación**: openpyxl
+- **Despliegue**: Render (gratuito)
+
+## Mejoras Futuras
+
+- API REST para integración móvil.
+- Dashboards con gráficas (Chart.js).
+- Más tipos de reportes.
+- Notificaciones por email.
+- Control de inventario de consumibles.

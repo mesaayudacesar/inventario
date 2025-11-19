@@ -4,11 +4,12 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, DeleteView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
+import csv
 from openpyxl import Workbook
 from django.contrib.auth.models import Group
 from django.db import models
 from django.contrib import messages
-from .models import Activo, Movimiento, Ubicacion, Historial
+from .models import Activo, Movimiento, Ubicacion, Categoria, Historial
 
 @login_required
 def dashboard_redirect(request):
@@ -61,6 +62,11 @@ class ActivoListView(LoginRequiredMixin, ListView):
     model = Activo
     template_name = 'activos/home.html'
     context_object_name = 'activos'
+
+    def get(self, request, *args, **kwargs):
+        if request.user.groups.filter(name='Admin').exists():
+            return redirect('activos:admin_dashboard')
+        return super().get(request, *args, **kwargs)
 
 
 @login_required
@@ -160,6 +166,65 @@ class UbicacionDeleteView(LoginRequiredMixin, DeleteView):
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
 
+# Categoria CRUD
+class CategoriaListView(LoginRequiredMixin, ListView):
+    model = Categoria
+    template_name = 'activos/categoria_list.html'
+    context_object_name = 'categorias'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para ver categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+class CategoriaCreateView(LoginRequiredMixin, CreateView):
+    model = Categoria
+    fields = ['nombre', 'descripcion']
+    template_name = 'activos/categoria_form.html'
+    success_url = reverse_lazy('activos:categorias')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para crear categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+class CategoriaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Categoria
+    fields = ['nombre', 'descripcion']
+    template_name = 'activos/categoria_form.html'
+    success_url = reverse_lazy('activos:categorias')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para editar categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+class CategoriaDeleteView(LoginRequiredMixin, DeleteView):
+    model = Categoria
+    template_name = 'activos/categoria_confirm_delete.html'
+    success_url = reverse_lazy('activos:categorias')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para eliminar categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+# Movimiento CRUD
+class MovimientoListView(LoginRequiredMixin, ListView):
+    model = Movimiento
+    template_name = 'activos/movimiento_list.html'
+    context_object_name = 'movimientos'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
+            messages.error(request, 'No tienes permisos para ver movimientos.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
 # Movimiento registration
 class RegistrarMovimientoView(LoginRequiredMixin, CreateView):
     model = Movimiento
@@ -183,7 +248,7 @@ class RegistrarMovimientoView(LoginRequiredMixin, CreateView):
         form.instance.activo = activo
         form.instance.usuario = self.request.user
         form.instance.estado_anterior = activo.estado
-        
+
         if form.cleaned_data['estado_nuevo']:
             activo.estado = form.cleaned_data['estado_nuevo']
             activo.save()
@@ -191,7 +256,7 @@ class RegistrarMovimientoView(LoginRequiredMixin, CreateView):
         if form.cleaned_data['ubicacion_destino']:
             activo.ubicacion = form.cleaned_data['ubicacion_destino']
             activo.save()
-            
+
         messages.success(self.request, 'Movimiento registrado exitosamente.')
         return super().form_valid(form)
 
@@ -232,6 +297,17 @@ def reporte_por_sede(request):
         'sedes': sedes,
         'sede_seleccionada': sede,
     })
+
+@login_required
+def exportar_csv(request):
+    activos = Activo.objects.all()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=inventario_activos.csv'
+    writer = csv.writer(response)
+    writer.writerow([field.name for field in Activo._meta.get_fields()])
+    for activo in activos:
+        writer.writerow([str(getattr(activo, field.name)) for field in Activo._meta.get_fields()])
+    return response
 
 # Update ActivoUpdateView for permissions
 class ActivoUpdateView(LoginRequiredMixin, UpdateView):

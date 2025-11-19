@@ -1,6 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Articulo(models.Model):
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Artículo")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Artículo"
+        verbose_name_plural = "Artículos"
+
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Categoría")
     descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
@@ -51,7 +63,7 @@ class Activo(models.Model):
     identificacion = models.CharField(max_length=100, blank=True, null=True, verbose_name="IDENTIFICACIÓN")
     zona = models.CharField(max_length=100, default="Valledupar", verbose_name="ZONA")
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ubicación")
-    categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Categoría")
+    articulo_fk = models.ForeignKey(Articulo, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Artículo")
     observacion = models.TextField(default="VERIFICADO", verbose_name="OBSERVACIÓN")
     punto_venta = models.CharField(max_length=100, blank=True, null=True, verbose_name="PUNTO DE VENTA")
     codigo_centro_costo = models.CharField(max_length=100, blank=True, null=True, verbose_name="CÓDIGO CENTRO DE COSTO")

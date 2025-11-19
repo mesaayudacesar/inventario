@@ -51,8 +51,8 @@
                     Gestión de Activos
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'activo-list' %}" class="btn btn-primary">Listar Activos</a>
-                    <a href="{% url 'activo-create' %}" class="btn btn-success">Crear Activo</a>
+                    <a href="{% url 'activos:home' %}" class="btn btn-primary">Listar Activos</a>
+                    <a href="{% url 'activos:activo-create' %}" class="btn btn-success">Crear Activo</a>
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
                 </div>
                 <div class="card-body">
                     <a href="#" class="btn btn-primary">Gestionar Zonas</a>
-                    <a href="{% url 'ubicacion-create' %}" class="btn btn-primary">Crear Ubicación</a>
+                    <a href="{% url 'activos:ubicacion-create' %}" class="btn btn-primary">Crear Ubicación</a>
                 </div>
             </div>
         </div>
@@ -90,8 +90,8 @@
                     Gestión de Usuarios
                 </div>
                 <div class="card-body">
-                    <a href="#" class="btn btn-primary">Listar Usuarios</a>
-                    <a href="#" class="btn btn-success">Crear Usuario</a>
+                    <a href="{% url 'usuarios:user_list' %}" class="btn btn-primary">Listar Usuarios</a>
+                    <a href="{% url 'usuarios:user_create' %}" class="btn btn-success">Crear Usuario</a>
                 </div>
             </div>
         </div>
@@ -105,7 +105,7 @@
                     Movimientos
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'registrar-movimiento' %}" class="btn btn-primary">Registrar Movimiento</a>
+                    <a href="{% url 'activos:movimientos' %}" class="btn btn-primary">Ver Movimientos</a>
                 </div>
             </div>
         </div>
@@ -116,8 +116,8 @@
                     Reportes
                 </div>
                 <div class="card-body">
-                    <a href="#" class="btn btn-primary">Inventario por Sede</a>
-                    <a href="#" class="btn btn-secondary">Exportar a Excel</a>
+                    <a href="{% url 'activos:reporte_por_sede' %}" class="btn btn-primary">Inventario por Sede</a>
+                    <a href="{% url 'activos:exportar_excel' %}" class="btn btn-secondary">Exportar a Excel</a>
                 </div>
             </div>
         </div>
