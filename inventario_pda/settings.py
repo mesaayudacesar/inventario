@@ -7,9 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-xt^j-6-xm3umsrp_)=x%d7p)va*cbr%9i^p8+$bmjy83w2&g(d'
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['inventario-6hyb.onrender.com', 'localhost', '127.0.0.1']
 
 
 
@@ -46,6 +46,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'inventario_pda.context_processors.user_groups',
             ],
         },
     },
@@ -101,6 +102,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -111,5 +114,5 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-LOGIN_REDIRECT_URL = '/activos/'
+LOGIN_REDIRECT_URL = '/activos/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
