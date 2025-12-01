@@ -15,20 +15,20 @@ urlpatterns = [
     path('activos/<int:pk>/editar/', views.ActivoUpdateView.as_view(), name='activo_update'),
     path('activos/<int:pk>/eliminar/', views.ActivoDeleteView.as_view(), name='activo_delete'),
     path('activos/<int:pk>/historial/', views.historial_activo, name='historial_activo'),
-    path('activos/<int:pk>/movimiento/', views.RegistrarMovimientoView.as_view(), name='registrar-movimiento'),
+    path('activos/<int:pk>/trazabilidad/', views.RegistrarTrazabilidadView.as_view(), name='registrar-trazabilidad'),
 
-    path('movimientos/', views.MovimientoListView.as_view(), name='movimientos'),
+    path('trazabilidad/', views.TrazabilidadListView.as_view(), name='trazabilidad'),
     path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
-
-    # Articulos
-    path('articulos/', views.ArticuloListView.as_view(), name='articulo_list'),
-    path('articulos/crear/', views.ArticuloCreateView.as_view(), name='articulo_create'),
-    path('articulos/<int:pk>/editar/', views.ArticuloUpdateView.as_view(), name='articulo_update'),
-    path('articulos/<int:pk>/eliminar/', views.ArticuloDeleteView.as_view(), name='articulo_delete'),
 
     # Zonas
     path('zonas/', views.ZonaListView.as_view(), name='zona_list'),
     path('zonas/crear/', views.ZonaCreateView.as_view(), name='zona_create'),
     path('zonas/<int:pk>/editar/', views.ZonaUpdateView.as_view(), name='zona_update'),
     path('zonas/<int:pk>/eliminar/', views.ZonaDeleteView.as_view(), name='zona_delete'),
+
+    # Categorías
+    path('categorias/', views.CategoriaListView.as_view(), name='categoria_list'),
+    path('categorias/crear/', views.CategoriaCreateView.as_view(), name='categoria_create'),
+    path('categorias/<int:pk>/editar/', views.CategoriaUpdateView.as_view(), name='categoria_update'),
+    path('categorias/<int:pk>/eliminar/', views.CategoriaDeleteView.as_view(), name='categoria_delete'),
 ]

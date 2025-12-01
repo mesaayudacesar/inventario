@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial del Activo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Historial del Activo: {{ activo.activo }}</h1>
+
+    <ul class="nav nav-tabs" id="historialTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="trazabilidad-tab" data-bs-toggle="tab" data-bs-target="#trazabilidad"
+                type="button" role="tab" aria-controls="trazabilidad" aria-selected="true">Trazabilidad</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="cambios-tab" data-bs-toggle="tab" data-bs-target="#cambios" type="button"
+                role="tab" aria-controls="cambios" aria-selected="false">Historial de Cambios</button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="historialTabContent">
+        <!-- Trazabilidad Tab -->
+        <div class="tab-pane fade show active" id="trazabilidad" role="tabpanel" aria-labelledby="trazabilidad-tab">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Usuario</th>
+                            <th>Zona Origen</th>
+                            <th>Zona Destino</th>
+                            <th>Estado</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in movimientos %}
+                        <tr>
+                            <td>{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                            <td>{{ mov.get_tipo_display }}</td>
+                            <td>{{ mov.usuario }}</td>
+                            <td>{{ mov.zona_origen|default:"-" }}</td>
+                            <td>{{ mov.zona_destino|default:"-" }}</td>
+                            <td>{{ mov.estado_nuevo|default:"-" }}</td>
+                            <td>{{ mov.descripcion|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No hay registros de trazabilidad.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Cambios Tab -->
+        <div class="tab-pane fade" id="cambios" role="tabpanel" aria-labelledby="cambios-tab">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Campo</th>
+                            <th>Valor Anterior</th>
+                            <th>Valor Nuevo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cambio in historial %}
+                        <tr>
+                            <td>{{ cambio.fecha|date:"d/m/Y H:i" }}</td>
+                            <td>{{ cambio.usuario }}</td>
+                            <td>{{ cambio.campo_cambiado }}</td>
+                            <td>{{ cambio.valor_anterior|default:"-" }}</td>
+                            <td>{{ cambio.valor_nuevo|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No hay cambios registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <a href="{% url 'activos:activo_detail' activo.pk %}" class="btn btn-secondary mt-3">Volver al Detalle</a>
+</div>
+{% endblock %}

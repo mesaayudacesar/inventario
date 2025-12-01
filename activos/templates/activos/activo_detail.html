@@ -32,8 +32,8 @@
         <td>{{ object.mac_superflex }}</td>
     </tr>
     <tr>
-        <th>ARTÍCULO</th>
-        <td>{{ object.articulo }}</td>
+        <th>CATEGORÍA</th>
+        <td>{{ object.categoria }}</td>
     </tr>
     <tr>
         <th>MARCA</th>
@@ -96,8 +96,14 @@
         <td>{{ object.fecha_modificacion }}</td>
     </tr>
 </table>
-<a href="{% url 'activos:home' %}" class="btn btn-primary">Volver al listado</a>
-{% if user.groups.all.0.name == 'Admin' or user.groups.all.0.name == 'Logística' %}
-<a href="{% url 'activos:activo_update' object.pk %}" class="btn btn-warning">Editar</a>
-{% endif %}
+<div class="mt-3">
+    <a href="{% url 'activos:home' %}" class="btn btn-secondary">Volver al listado</a>
+
+    {% if user.groups.all.0.name == 'Admin' or user.groups.all.0.name == 'Logística' %}
+    <a href="{% url 'activos:activo_update' object.pk %}" class="btn btn-warning">Editar</a>
+    <a href="{% url 'activos:registrar-trazabilidad' object.pk %}" class="btn btn-info">Registrar Trazabilidad</a>
+    {% endif %}
+
+    <a href="{% url 'activos:historial_activo' object.pk %}" class="btn btn-info">Ver Historial</a>
+</div>
 {% endblock %}

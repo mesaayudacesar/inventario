@@ -1,205 +1,213 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
-{% block title %}{% if form.instance.pk %}Editar Activo{% else %}Crear Activo{% endif %}{% endblock %}
+{% block title %}
+{% if form.instance.pk %}Editar Activo{% else %}Crear Activo{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
                     <h4 class="mb-0">
-                        <i class="fas fa-edit"></i> {% if form.instance.pk %}Editar Activo{% else %}Crear Nuevo Activo{% endif %}
+                        <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                        {% if form.instance.pk %}Editar Activo{% else %}Crear Nuevo Activo{% endif %}
                     </h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.item.id_for_label }}" class="form-label">ITEM</label>
+                        <div class="row g-3">
+                            <!-- Fila 1 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.item.id_for_label }}" class="form-label fw-bold">ITEM</label>
                                 {{ form.item }}
                                 {% if form.item.errors %}
-                                    <div class="invalid-feedback">{{ form.item.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.item.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.documento.id_for_label }}" class="form-label">Documento</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.documento.id_for_label }}"
+                                    class="form-label fw-bold">Documento</label>
                                 {{ form.documento }}
                                 {% if form.documento.errors %}
-                                    <div class="invalid-feedback">{{ form.documento.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.documento.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.nombres_apellidos.id_for_label }}" class="form-label">Nombres y Apellidos</label>
+                            <!-- Fila 2 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.nombres_apellidos.id_for_label }}"
+                                    class="form-label fw-bold">Nombres y Apellidos</label>
                                 {{ form.nombres_apellidos }}
                                 {% if form.nombres_apellidos.errors %}
-                                    <div class="invalid-feedback">{{ form.nombres_apellidos.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.nombres_apellidos.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.articulo.id_for_label }}" class="form-label">Artículo</label>
-                                {{ form.articulo }}
-                                {% if form.articulo.errors %}
-                                    <div class="invalid-feedback">{{ form.articulo.errors.0 }}</div>
+                            <div class="col-md-6">
+                                <label for="{{ form.categoria.id_for_label }}"
+                                    class="form-label fw-bold">Categoría</label>
+                                {{ form.categoria }}
+                                {% if form.categoria.errors %}
+                                <div class="text-danger small">{{ form.categoria.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.marca.id_for_label }}" class="form-label">Marca</label>
+                            <!-- Fila 3 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.marca.id_for_label }}" class="form-label fw-bold">Marca</label>
                                 {{ form.marca }}
                                 {% if form.marca.errors %}
-                                    <div class="invalid-feedback">{{ form.marca.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.marca.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">Estado</label>
                                 {{ form.estado }}
                                 {% if form.estado.errors %}
-                                    <div class="invalid-feedback">{{ form.estado.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.estado.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.zona.id_for_label }}" class="form-label">Zona</label>
+                            <!-- Fila 4 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.zona.id_for_label }}" class="form-label fw-bold">Zona</label>
                                 {{ form.zona }}
                                 {% if form.zona.errors %}
-                                    <div class="invalid-feedback">{{ form.zona.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.zona.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.responsable.id_for_label }}" class="form-label">Responsable</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.responsable.id_for_label }}"
+                                    class="form-label fw-bold">Responsable</label>
                                 {{ form.responsable }}
                                 {% if form.responsable.errors %}
-                                    <div class="invalid-feedback">{{ form.responsable.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.responsable.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.identificacion.id_for_label }}" class="form-label">Identificación</label>
+                            <!-- Fila 5 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.identificacion.id_for_label }}"
+                                    class="form-label fw-bold">Identificación</label>
                                 {{ form.identificacion }}
                                 {% if form.identificacion.errors %}
-                                    <div class="invalid-feedback">{{ form.identificacion.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.identificacion.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.punto_venta.id_for_label }}" class="form-label">Punto de Venta</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.punto_venta.id_for_label }}" class="form-label fw-bold">Punto de
+                                    Venta</label>
                                 {{ form.punto_venta }}
                                 {% if form.punto_venta.errors %}
-                                    <div class="invalid-feedback">{{ form.punto_venta.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.punto_venta.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.imei1.id_for_label }}" class="form-label">IMEI 1</label>
+                            <!-- Fila 6 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.imei1.id_for_label }}" class="form-label fw-bold">IMEI 1</label>
                                 {{ form.imei1 }}
                                 {% if form.imei1.errors %}
-                                    <div class="invalid-feedback">{{ form.imei1.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.imei1.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.imei2.id_for_label }}" class="form-label">IMEI 2</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.imei2.id_for_label }}" class="form-label fw-bold">IMEI 2</label>
                                 {{ form.imei2 }}
                                 {% if form.imei2.errors %}
-                                    <div class="invalid-feedback">{{ form.imei2.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.imei2.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.sn.id_for_label }}" class="form-label">S/N</label>
+                            <!-- Fila 7 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.sn.id_for_label }}" class="form-label fw-bold">S/N</label>
                                 {{ form.sn }}
                                 {% if form.sn.errors %}
-                                    <div class="invalid-feedback">{{ form.sn.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.sn.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.mac_superflex.id_for_label }}" class="form-label">MAC SUPERFLEX</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.mac_superflex.id_for_label }}" class="form-label fw-bold">MAC
+                                    SUPERFLEX</label>
                                 {{ form.mac_superflex }}
                                 {% if form.mac_superflex.errors %}
-                                    <div class="invalid-feedback">{{ form.mac_superflex.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.mac_superflex.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.cargo.id_for_label }}" class="form-label">Cargo</label>
+                            <!-- Fila 8 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.cargo.id_for_label }}" class="form-label fw-bold">Cargo</label>
                                 {{ form.cargo }}
                                 {% if form.cargo.errors %}
-                                    <div class="invalid-feedback">{{ form.cargo.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.cargo.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.activo.id_for_label }}" class="form-label">Activo</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.activo.id_for_label }}" class="form-label fw-bold">Activo</label>
                                 {{ form.activo }}
                                 {% if form.activo.errors %}
-                                    <div class="invalid-feedback">{{ form.activo.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.activo.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.fecha_confirmacion.id_for_label }}" class="form-label">Fecha de Confirmación</label>
+                            <!-- Fila 9 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_confirmacion.id_for_label }}" class="form-label fw-bold">Fecha
+                                    de Confirmación</label>
                                 {{ form.fecha_confirmacion }}
                                 {% if form.fecha_confirmacion.errors %}
-                                    <div class="invalid-feedback">{{ form.fecha_confirmacion.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.fecha_confirmacion.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.fecha_salida_bodega.id_for_label }}" class="form-label">Fecha de Salida de Bodega</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_salida_bodega.id_for_label }}"
+                                    class="form-label fw-bold">Fecha de Salida de Bodega</label>
                                 {{ form.fecha_salida_bodega }}
                                 {% if form.fecha_salida_bodega.errors %}
-                                    <div class="invalid-feedback">{{ form.fecha_salida_bodega.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.fecha_salida_bodega.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.codigo_centro_costo.id_for_label }}" class="form-label">Código Centro de Costo</label>
+                            <!-- Fila 10 -->
+                            <div class="col-md-6">
+                                <label for="{{ form.codigo_centro_costo.id_for_label }}"
+                                    class="form-label fw-bold">Código Centro de Costo</label>
                                 {{ form.codigo_centro_costo }}
                                 {% if form.codigo_centro_costo.errors %}
-                                    <div class="invalid-feedback">{{ form.codigo_centro_costo.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.codigo_centro_costo.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.centro_costo_punto.id_for_label }}" class="form-label">Centro de Costo Punto</label>
+                            <div class="col-md-6">
+                                <label for="{{ form.centro_costo_punto.id_for_label }}"
+                                    class="form-label fw-bold">Centro de Costo Punto</label>
                                 {{ form.centro_costo_punto }}
                                 {% if form.centro_costo_punto.errors %}
-                                    <div class="invalid-feedback">{{ form.centro_costo_punto.errors.0 }}</div>
+                                <div class="text-danger small">{{ form.centro_costo_punto.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Observación -->
+                            <div class="col-12">
+                                <label for="{{ form.observacion.id_for_label }}"
+                                    class="form-label fw-bold">Observación</label>
+                                {{ form.observacion }}
+                                {% if form.observacion.errors %}
+                                <div class="text-danger small">{{ form.observacion.errors.0 }}</div>
                                 {% endif %}
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.observacion.id_for_label }}" class="form-label">Observación</label>
-                            {{ form.observacion }}
-                            {% if form.observacion.errors %}
-                                <div class="invalid-feedback">{{ form.observacion.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-flex justify-content-end">
-                            <a href="{% url 'activos:home' %}" class="btn btn-secondary me-2">
-                                <i class="fas fa-times"></i> Cancelar
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'activos:home' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save"></i> Guardar
+                                <i class="fas fa-save me-2"></i>Guardar
                             </button>
                         </div>
                     </form>
@@ -210,12 +218,47 @@
 </div>
 
 <script>
-// Bootstrap form validation
-(function () {
-    'use strict'
-    var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms)
-        .forEach(function (form) {
+    // Bootstrap form validation
+    (function () {
+        'use strict'
+
+        // Agregar clases form-control a los inputs si no las tienen
+        document.querySelectorAll('form input, form select, form textarea').forEach(function (element) {
+            if (!element.classList.contains('form-control') && !element.classList.contains('form-select')) {
+                if (element.tagName === 'SELECT') {
+                    element.classList.add('form-select');
+                } else {
+                    element.classList.add('form-control');
+                }
+            }
+        });
+
+        // Establecer fecha de salida automática si está vacía
+        const fechaSalidaInput = document.getElementById('{{ form.fecha_salida_bodega.id_for_label }}');
+        if (fechaSalidaInput && !fechaSalidaInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            fechaSalidaInput.value = today;
+        }
+
+        // Auto-resize observación
+        const observacionInput = document.getElementById('{{ form.observacion.id_for_label }}');
+        if (observacionInput) {
+            observacionInput.style.overflow = 'hidden';
+            observacionInput.style.resize = 'none';
+
+            const resize = () => {
+                observacionInput.style.height = 'auto';
+                observacionInput.style.height = observacionInput.scrollHeight + 'px';
+            };
+
+            observacionInput.addEventListener('input', resize);
+            // Initial resize in case there is content
+            setTimeout(resize, 100); // Small delay to ensure rendering
+        }
+
+        // Validación
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
             form.addEventListener('submit', function (event) {
                 if (!form.checkValidity()) {
                     event.preventDefault()
@@ -224,6 +267,6 @@
                 form.classList.add('was-validated')
             }, false)
         })
-})()
+    })()
 </script>
 {% endblock %}

@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from django.contrib.auth.models import Group
 from django.db import models
 from django.contrib import messages
-from .models import Activo, Movimiento, Historial, Articulo
+from .models import Activo, Trazabilidad, Historial, Zona, Categoria
 
 @login_required
 def dashboard_redirect(request):
@@ -43,7 +43,7 @@ def logistica_dashboard(request):
     if not request.user.groups.filter(name='Logística').exists():
         return redirect('activos:home')
     activos_por_estado = Activo.objects.values('estado').annotate(count=models.Count('estado'))
-    movimientos_recientes = Movimiento.objects.order_by('-fecha')[:10]
+    movimientos_recientes = Trazabilidad.objects.order_by('-fecha')[:10]
     return render(request, 'activos/logistica_dashboard.html', {
         'activos_por_estado': activos_por_estado,
         'movimientos_recientes': movimientos_recientes,
@@ -66,21 +66,82 @@ class ActivoListView(LoginRequiredMixin, ListView):
 
 @login_required
 def exportar_excel(request):
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    
     activos = Activo.objects.all()
     wb = Workbook()
     ws = wb.active
     ws.title = "Inventario de Activos"
 
+    # Definir estilos
+    header_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+
     # Headers
-    headers = [field.name for field in Activo._meta.get_fields()]
+    headers = ['ITEM', 'DOCUMENTO', 'NOMBRES Y APELLIDOS', 'IMEI 1', 'IMEI 2', 'S/N', 
+               'MAC SUPERFLEX', 'MARCA', 'ACTIVO', 'CARGO', 'ESTADO', 'FECHA CONFIRMACIÓN',
+               'RESPONSABLE', 'IDENTIFICACIÓN', 'ZONA', 'CATEGORÍA', 'OBSERVACIÓN', 
+               'PUNTO DE VENTA', 'CÓDIGO CENTRO COSTO', 'CENTRO COSTO PUNTO', 'FECHA SALIDA BODEGA']
+    
     ws.append(headers)
+    
+    # Aplicar estilos a encabezados
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+        cell.border = border
 
     # Data
     for activo in activos:
-        row = []
-        for field in headers:
-            row.append(str(getattr(activo, field)))
+        row = [
+            activo.item,
+            activo.documento or '',
+            activo.nombres_apellidos or '',
+            activo.imei1 or '',
+            activo.imei2 or '',
+            activo.sn or '',
+            activo.mac_superflex or '',
+            activo.marca or '',
+            activo.activo or '',
+            activo.cargo or '',
+            activo.estado or '',
+            activo.fecha_confirmacion.strftime('%d/%m/%Y') if activo.fecha_confirmacion else '',
+            activo.responsable or '',
+            activo.identificacion or '',
+            activo.zona or '',
+            str(activo.categoria) if activo.categoria else '',
+            activo.observacion or '',
+            activo.punto_venta or '',
+            activo.codigo_centro_costo or '',
+            activo.centro_costo_punto or '',
+            activo.fecha_salida_bodega.strftime('%d/%m/%Y') if activo.fecha_salida_bodega else ''
+        ]
         ws.append(row)
+        
+        # Aplicar bordes a las celdas de datos
+        for cell in ws[ws.max_row]:
+            cell.border = border
+
+    # Ajustar ancho de columnas
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=inventario_activos.xlsx'
@@ -118,27 +179,27 @@ class ActivoDeleteView(LoginRequiredMixin, DeleteView):
 
 
 
-# Movimiento CRUD
-class MovimientoListView(LoginRequiredMixin, ListView):
-    model = Movimiento
-    template_name = 'activos/movimiento_list.html'
+# Trazabilidad CRUD
+class TrazabilidadListView(LoginRequiredMixin, ListView):
+    model = Trazabilidad
+    template_name = 'activos/trazabilidad_list.html'
     context_object_name = 'movimientos'
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
-            messages.error(request, 'No tienes permisos para ver movimientos.')
+            messages.error(request, 'No tienes permisos para ver trazabilidad.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
 
-# Movimiento registration
-class RegistrarMovimientoView(LoginRequiredMixin, CreateView):
-    model = Movimiento
+# Trazabilidad registration
+class RegistrarTrazabilidadView(LoginRequiredMixin, CreateView):
+    model = Trazabilidad
     fields = ['tipo', 'zona_origen', 'zona_destino', 'estado_nuevo', 'descripcion']
-    template_name = 'activos/registrar_movimiento.html'
+    template_name = 'activos/registrar_trazabilidad.html'
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
-            messages.error(request, 'No tienes permisos para registrar movimientos.')
+            messages.error(request, 'No tienes permisos para registrar trazabilidad.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
 
@@ -163,7 +224,7 @@ class RegistrarMovimientoView(LoginRequiredMixin, CreateView):
             activo.zona = form.cleaned_data['zona_destino']
             activo.save()
 
-        messages.success(self.request, 'Movimiento registrado exitosamente.')
+        messages.success(self.request, 'Trazabilidad registrada exitosamente.')
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -175,7 +236,7 @@ class RegistrarMovimientoView(LoginRequiredMixin, CreateView):
 def historial_activo(request, pk):
     activo = get_object_or_404(Activo, pk=pk)
     historial = Historial.objects.filter(activo=activo).order_by('-fecha')
-    movimientos = Movimiento.objects.filter(activo=activo).order_by('-fecha')
+    movimientos = Trazabilidad.objects.filter(activo=activo).order_by('-fecha')
     return render(request, 'activos/historial_activo.html', {
         'activo': activo,
         'historial': historial,
@@ -241,56 +302,8 @@ class ActivoCreateView(LoginRequiredMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
 
-# Articulo CRUD
-class ArticuloListView(LoginRequiredMixin, ListView):
-    model = Articulo
-    template_name = 'activos/articulo_list.html'
-    context_object_name = 'articulos'
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
-            messages.error(request, 'No tienes permisos para ver artículos.')
-            return redirect('activos:home')
-        return super().dispatch(request, *args, **kwargs)
-
-class ArticuloCreateView(LoginRequiredMixin, CreateView):
-    model = Articulo
-    fields = '__all__'
-    template_name = 'activos/articulo_form.html'
-    success_url = reverse_lazy('activos:articulo_list')
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
-            messages.error(request, 'No tienes permisos para crear artículos.')
-            return redirect('activos:home')
-        return super().dispatch(request, *args, **kwargs)
-
-class ArticuloUpdateView(LoginRequiredMixin, UpdateView):
-    model = Articulo
-    fields = '__all__'
-    template_name = 'activos/articulo_form.html'
-    success_url = reverse_lazy('activos:articulo_list')
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
-            messages.error(request, 'No tienes permisos para editar artículos.')
-            return redirect('activos:home')
-        return super().dispatch(request, *args, **kwargs)
-
-class ArticuloDeleteView(LoginRequiredMixin, DeleteView):
-    model = Articulo
-    template_name = 'activos/articulo_confirm_delete.html'
-    success_url = reverse_lazy('activos:articulo_list')
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
-            messages.error(request, 'No tienes permisos para eliminar artículos.')
-            return redirect('activos:home')
-        return super().dispatch(request, *args, **kwargs)
-
 
 # Zona CRUD
-from .models import Zona
 
 class ZonaListView(LoginRequiredMixin, ListView):
     model = Zona
@@ -335,6 +348,55 @@ class ZonaDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.groups.filter(name='Admin').exists():
             messages.error(request, 'No tienes permisos para eliminar zonas.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+
+# Categoria CRUD
+
+class CategoriaListView(LoginRequiredMixin, ListView):
+    model = Categoria
+    template_name = 'activos/category_list.html'
+    context_object_name = 'categorias'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para ver categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+class CategoriaCreateView(LoginRequiredMixin, CreateView):
+    model = Categoria
+    fields = '__all__'
+    template_name = 'activos/category_form.html'
+    success_url = reverse_lazy('activos:categoria_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para crear categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+class CategoriaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Categoria
+    fields = '__all__'
+    template_name = 'activos/category_form.html'
+    success_url = reverse_lazy('activos:categoria_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para editar categorías.')
+            return redirect('activos:home')
+        return super().dispatch(request, *args, **kwargs)
+
+class CategoriaDeleteView(LoginRequiredMixin, DeleteView):
+    model = Categoria
+    template_name = 'activos/category_confirm_delete.html'
+    success_url = reverse_lazy('activos:categoria_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name='Admin').exists():
+            messages.error(request, 'No tienes permisos para eliminar categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
 

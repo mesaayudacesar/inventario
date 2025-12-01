@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Crear{% endif %} Categoría{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <h1 class="fw-bold">
+        <i class="fas fa-layer-group me-2"></i>
+        {% if object %}Editar Categoría{% else %}Nueva Categoría{% endif %}
+    </h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="id_nombre" class="form-label fw-bold">Nombre de la Categoría *</label>
+                <input type="text" name="nombre" class="form-control" id="id_nombre"
+                    value="{{ form.nombre.value|default:'' }}" required>
+                {% if form.nombre.errors %}
+                <div class="text-danger mt-1">{{ form.nombre.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_descripcion" class="form-label fw-bold">Descripción</label>
+                <textarea name="descripcion" class="form-control" id="id_descripcion"
+                    rows="4">{{ form.descripcion.value|default:'' }}</textarea>
+                {% if form.descripcion.errors %}
+                <div class="text-danger mt-1">{{ form.descripcion.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>Guardar
+                </button>
+                <a href="{% url 'activos:categoria_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

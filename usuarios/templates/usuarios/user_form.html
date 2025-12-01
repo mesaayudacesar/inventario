@@ -1,43 +1,45 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 
-{% block title %}{% if user %}Editar{% else %}Crear{% endif %} Usuario{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Usuario{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card">
             <div class="card-header bg-white py-3">
-                <h4 class="mb-0 fw-bold">{% if user %}Editar{% else %}Crear{% endif %} Usuario</h4>
+                <h4 class="mb-0 fw-bold">{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Usuario</h4>
             </div>
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
 
-                    {% if form %}
-                    {{ form|crispy }}
-                    {% else %}
-                    <!-- Manual form for update since view doesn't use a Django form class for update -->
+                    {% for field in form %}
                     <div class="mb-3">
-                        <label for="username" class="form-label">Usuario</label>
-                        <input type="text" class="form-control" id="username" name="username"
-                            value="{{ user.username }}" required>
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {% if field.name == 'password' %}
+                        <input type="password" name="{{ field.name }}" class="form-control"
+                            id="{{ field.id_for_label }}" {% if not form.instance.pk %}required{% endif %}>
+                        {% elif field.name == 'group' %}
+                        <select name="{{ field.name }}" class="form-select" id="{{ field.id_for_label }}" required>
+                            <option value="">Seleccione un rol</option>
+                            {% for choice in field.field.queryset %}
+                            <option value="{{ choice.pk }}" {% if field.value==choice.pk %}selected{% endif %}>{{
+                                choice.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        {{ field }}
+                        {% endif %}
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ field.errors.0 }}
+                        </div>
+                        {% endif %}
+                        {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
                     </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="first_name" class="form-label">Nombre</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name"
-                            value="{{ user.first_name }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="last_name" class="form-label">Apellido</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name"
-                            value="{{ user.last_name }}">
-                    </div>
-                    {% endif %}
+                    {% endfor %}
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         <a href="{% url 'usuarios:user_list' %}" class="btn btn-light">Cancelar</a>

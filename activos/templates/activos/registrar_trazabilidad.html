@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}Registrar Movimiento{% endblock %}
+{% block title %}Registrar Trazabilidad{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-md-6">
-        <h1>Registrar Movimiento para {{ activo.activo }}</h1>
+        <h1>Registrar Trazabilidad para {{ activo.activo }}</h1>
         <form method="post">
             {% csrf_token %}
-            <div class="form-group">
-                <label for="tipo">Tipo de Movimiento</label>
+            <div class="form-group mb-3">
+                <label for="tipo" class="form-label">Tipo de Trazabilidad</label>
                 <select name="tipo" class="form-control" required>
                     <option value="ingreso">Ingreso</option>
                     <option value="salida">Salida</option>
@@ -17,8 +17,8 @@
                     <option value="cambio_estado">Cambio de Estado</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="zona_origen">Zona Origen</label>
+            <div class="form-group mb-3">
+                <label for="zona_origen" class="form-label">Zona Origen</label>
                 <select name="zona_origen" class="form-control">
                     <option value="">Ninguna</option>
                     {% for zona in zonas %}
@@ -26,8 +26,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
-                <label for="zona_destino">Zona Destino</label>
+            <div class="form-group mb-3">
+                <label for="zona_destino" class="form-label">Zona Destino</label>
                 <select name="zona_destino" class="form-control">
                     <option value="">Ninguna</option>
                     {% for zona in zonas %}
@@ -35,15 +35,15 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
-                <label for="estado_nuevo">Estado Nuevo</label>
+            <div class="form-group mb-3">
+                <label for="estado_nuevo" class="form-label">Estado Nuevo</label>
                 <input type="text" name="estado_nuevo" class="form-control" placeholder="Ej. reparación, asignado">
             </div>
-            <div class="form-group">
-                <label for="descripcion">Descripción</label>
+            <div class="form-group mb-3">
+                <label for="descripcion" class="form-label">Descripción</label>
                 <textarea name="descripcion" class="form-control"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">Registrar Movimiento</button>
+            <button type="submit" class="btn btn-primary">Registrar Trazabilidad</button>
             <a href="{% url 'activos:activo_detail' activo.pk %}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

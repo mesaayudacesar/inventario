@@ -1,8 +1,5 @@
 # TODO: Implement Admin Pages for Administrador Role
 
-## Step 1: Add Category Model
-- Add Category model to activos/models.py
-- Run makemigrations and migrate
 
 ## Step 2: Add Category CRUD Views
 - Add CategoryListView, CategoryCreateView, CategoryUpdateView, CategoryDeleteView to activos/views.py

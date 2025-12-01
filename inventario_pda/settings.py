@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-xt^j-6-xm3umsrp_)=x%d7p)va*cbr%9i^p8+$bmjy83w2&g(d'
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['inventario-6hyb.onrender.com', 'localhost', '127.0.0.1']
 
@@ -121,3 +121,4 @@ STATICFILES_DIRS = [
 
 LOGIN_REDIRECT_URL = '/activos/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = 'usuarios:login'

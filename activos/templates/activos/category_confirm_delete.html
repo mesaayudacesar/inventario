@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Categoría{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <h1 class="fw-bold text-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+    </h1>
+</div>
+
+<div class="card border-danger">
+    <div class="card-body">
+        <h5 class="card-title">¿Está seguro de que desea eliminar esta categoría?</h5>
+        <div class="alert alert-warning mt-3">
+            <strong>Categoría:</strong> {{ object.nombre }}<br>
+            <strong>Descripción:</strong> {{ object.descripcion|default:"Sin descripción" }}<br>
+            <strong>Fecha de Creación:</strong> {{ object.fecha_creacion|date:"d/m/Y H:i" }}
+        </div>
+
+        <p class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Esta acción no se puede deshacer.
+        </p>
+
+        <form method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash me-2"></i>Sí, eliminar
+            </button>
+            <a href="{% url 'activos:categoria_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times me-2"></i>Cancelar
+            </a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

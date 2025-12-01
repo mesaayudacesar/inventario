@@ -3,53 +3,80 @@
 {% block title %}Lista de Activos{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h1>Lista de Activos</h1>
-        {% if user.groups.all.0.name == 'Admin' %}
-        <a href="{% url 'activos:activo-create' %}" class="btn btn-primary mb-3">Crear Nuevo Activo</a>
-        <a href="{% url 'usuarios:user_list' %}" class="btn btn-info mb-3">Gestionar Usuarios</a>
-        {% endif %}
-        <a href="{% url 'activos:exportar_excel' %}" class="btn btn-secondary mb-3">Exportar a Excel</a>
-        {% if user.groups.all.0.name == 'Admin' or user.groups.all.0.name == 'Logística' %}
-        <a href="{% url 'activos:reporte_por_sede' %}" class="btn btn-info mb-3">Reporte por Zona</a>
-        {% endif %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>ITEM</th>
-                    <th>ACTIVO</th>
-                    <th>MARCA</th>
-                    <th>ESTADO</th>
-                    <th>ZONA</th>
-                    <th>ACCIONES</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for activo in activos %}
-                <tr>
-                    <td>{{ activo.item }}</td>
-                    <td>{{ activo.activo }}</td>
-                    <td>{{ activo.marca }}</td>
-                    <td>{{ activo.estado }}</td>
-                    <td>{{ activo.zona }}</td>
-                    <td>
-                        <a href="{% url 'activos:activo_detail' activo.pk %}" class="btn btn-info btn-sm">Ver</a>
-                        <a href="{% url 'activos:historial_activo' activo.pk %}"
-                            class="btn btn-secondary btn-sm">Historial</a>
-                        {% if user.groups.all.0.name == 'Admin' or user.groups.all.0.name == 'Logística' %}
-                        <a href="{% url 'activos:activo_update' activo.pk %}" class="btn btn-warning btn-sm">Editar</a>
-                        <a href="{% url 'activos:registrar_movimiento' activo.pk %}"
-                            class="btn btn-success btn-sm">Movimiento</a>
-                        {% endif %}
-                        {% if user.groups.all.0.name == 'Admin' %}
-                        <a href="{% url 'activos:activo_delete' activo.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="fw-bold">Activos</h1>
+    {% if user.groups.all.0.name == 'Admin' %}
+    <a href="{% url 'activos:activo-create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i> Nuevo Activo
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ITEM</th>
+                        <th>ACTIVO</th>
+                        <th>MARCA</th>
+                        <th>ESTADO</th>
+                        <th>ZONA</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activo in activos %}
+                    <tr>
+                        <td class="fw-semibold">{{ activo.item }}</td>
+                        <td>{{ activo.activo }}</td>
+                        <td>{{ activo.marca }}</td>
+                        <td>
+                            <span
+                                class="badge {% if 'asignado' in activo.estado|lower %}bg-success{% elif 'bodega' in activo.estado|lower %}bg-warning text-dark{% elif 'baja' in activo.estado|lower %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ activo.estado }}
+                            </span>
+                        </td>
+                        <td>{{ activo.zona }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'activos:activo_detail' activo.pk %}"
+                                class="btn btn-sm btn-info text-white me-1" title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'activos:historial_activo' activo.pk %}"
+                                class="btn btn-sm btn-secondary me-1" title="Ver Historial">
+                                <i class="fas fa-history"></i>
+                            </a>
+                            {% if user.groups.all.0.name == 'Admin' or user.groups.all.0.name == 'Logística' %}
+                            <a href="{% url 'activos:activo_update' activo.pk %}" class="btn btn-sm btn-warning me-1"
+                                title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'activos:registrar-trazabilidad' activo.pk %}"
+                                class="btn btn-sm btn-success me-1" title="Registrar Trazabilidad">
+                                <i class="fas fa-route"></i>
+                            </a>
+                            {% endif %}
+                            {% if user.groups.all.0.name == 'Admin' %}
+                            <a href="{% url 'activos:activo_delete' activo.pk %}" class="btn btn-sm btn-danger"
+                                title="Eliminar" onclick="return confirm('¿Estás seguro de eliminar este activo?');">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
+                            No hay activos registrados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,18 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class Articulo(models.Model):
-    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Artículo")
-    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
-    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-
-    def __str__(self):
-        return self.nombre
-
-    class Meta:
-        verbose_name = "Artículo"
-        verbose_name_plural = "Artículos"
-
 
 class Zona(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Zona")
@@ -25,6 +13,19 @@ class Zona(models.Model):
     class Meta:
         verbose_name = "Zona"
         verbose_name_plural = "Zonas"
+
+
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Categoría")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Categoría"
+        verbose_name_plural = "Categorías"
 
 
 
@@ -46,7 +47,6 @@ class Activo(models.Model):
     imei2 = models.CharField(max_length=100, blank=True, null=True, verbose_name="IMEI 2")
     sn = models.CharField(max_length=100, blank=True, null=True, verbose_name="S/N")
     mac_superflex = models.CharField(max_length=100, blank=True, null=True, verbose_name="MAC SUPERFLEX")
-    articulo = models.CharField(max_length=100, default="MAQUINA", verbose_name="ARTÍCULO")
     marca = models.CharField(max_length=20, choices=MARCA_CHOICES, blank=True, null=True, verbose_name="MARCA")
     activo = models.CharField(max_length=100, blank=True, null=True, verbose_name="ACTIVO")
     cargo = models.CharField(max_length=100, default="vendedor ambulante", verbose_name="CARGO")
@@ -55,8 +55,7 @@ class Activo(models.Model):
     responsable = models.CharField(max_length=100, blank=True, null=True, verbose_name="RESPONSABLE")
     identificacion = models.CharField(max_length=100, blank=True, null=True, verbose_name="IDENTIFICACIÓN")
     zona = models.CharField(max_length=100, default="Valledupar", verbose_name="ZONA")
-    # ubicacion removed
-    articulo_fk = models.ForeignKey(Articulo, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Artículo")
+    categoria = models.ForeignKey('Categoria', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Categoría")
     observacion = models.TextField(default="VERIFICADO", verbose_name="OBSERVACIÓN")
     punto_venta = models.CharField(max_length=100, blank=True, null=True, verbose_name="PUNTO DE VENTA")
     codigo_centro_costo = models.CharField(max_length=100, blank=True, null=True, verbose_name="CÓDIGO CENTRO DE COSTO")
@@ -73,7 +72,7 @@ class Activo(models.Model):
         verbose_name_plural = "Activos"
 
 
-class Movimiento(models.Model):
+class Trazabilidad(models.Model):
     TIPO_CHOICES = [
         ('ingreso', 'Ingreso'),
         ('salida', 'Salida'),
@@ -82,7 +81,7 @@ class Movimiento(models.Model):
     ]
 
     activo = models.ForeignKey(Activo, on_delete=models.CASCADE, verbose_name="Activo")
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo de Movimiento")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo de Trazabilidad")
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario")
     zona_origen = models.CharField(max_length=100, blank=True, null=True, verbose_name="Zona Origen")
     zona_destino = models.CharField(max_length=100, blank=True, null=True, verbose_name="Zona Destino")
@@ -95,9 +94,10 @@ class Movimiento(models.Model):
         return f"{self.tipo} - {self.activo} - {self.fecha}"
 
     class Meta:
-        verbose_name = "Movimiento"
-        verbose_name_plural = "Movimientos"
+        verbose_name = "Trazabilidad"
+        verbose_name_plural = "Trazabilidad"
         ordering = ['-fecha']
+        db_table = 'activos_trazabilidad'
 
 
 class Historial(models.Model):

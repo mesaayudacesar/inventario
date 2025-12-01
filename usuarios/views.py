@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
+from .forms import UserForm
 
 class CustomLoginView(LoginView):
     def get_success_url(self):
@@ -33,13 +33,13 @@ def user_create(request):
         messages.error(request, 'No tienes permisos para crear usuarios.')
         return redirect('activos:home')
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            form.save()
             messages.success(request, 'Usuario creado exitosamente.')
             return redirect('usuarios:user_list')
     else:
-        form = UserCreationForm()
+        form = UserForm()
     return render(request, 'usuarios/user_form.html', {'form': form})
 
 @login_required
@@ -47,16 +47,16 @@ def user_update(request, pk):
     if not request.user.groups.filter(name='Admin').exists():
         messages.error(request, 'No tienes permisos para editar usuarios.')
         return redirect('activos:home')
-    user = User.objects.get(pk=pk)
+    user = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
-        user.username = request.POST.get('username')
-        user.email = request.POST.get('email')
-        user.first_name = request.POST.get('first_name')
-        user.last_name = request.POST.get('last_name')
-        user.save()
-        messages.success(request, 'Usuario actualizado exitosamente.')
-        return redirect('usuarios:user_list')
-    return render(request, 'usuarios/user_form.html', {'user': user})
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Usuario actualizado exitosamente.')
+            return redirect('usuarios:user_list')
+    else:
+        form = UserForm(instance=user)
+    return render(request, 'usuarios/user_form.html', {'form': form})
 
 @login_required
 def user_reset_password(request, pk):
