@@ -16,9 +16,9 @@ urlpatterns = [
     path('<int:pk>/eliminar/', views.ActivoDeleteView.as_view(), name='activo_delete'),
     path('eliminar-multiples/', views.eliminar_multiples_activos, name='activo_delete_multiple'),
     path('<int:pk>/historial/', views.historial_activo, name='historial_activo'),
-    path('<int:pk>/trazabilidad/', views.RegistrarTrazabilidadView.as_view(), name='registrar-trazabilidad'),
+    path('<int:pk>/tranzabilidad/', views.RegistrarTranzabilidadView.as_view(), name='registrar-tranzabilidad'),
 
-    path('trazabilidad/', views.TrazabilidadListView.as_view(), name='trazabilidad'),
+    path('tranzabilidad/', views.TranzabilidadListView.as_view(), name='tranzabilidad'),
     path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
 
     # Zonas

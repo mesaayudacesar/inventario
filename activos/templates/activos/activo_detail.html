@@ -101,7 +101,7 @@
 
     {% if user.groups.all.0.name == 'Admin' or user.groups.all.0.name == 'Logística' %}
     <a href="{% url 'activos:activo_update' object.pk %}" class="btn btn-warning">Editar</a>
-    <a href="{% url 'activos:registrar-trazabilidad' object.pk %}" class="btn btn-info">Registrar Trazabilidad</a>
+    <a href="{% url 'activos:registrar-tranzabilidad' object.pk %}" class="btn btn-info">Registrar Tranzabilidad</a>
     {% endif %}
 
     <a href="{% url 'activos:historial_activo' object.pk %}" class="btn btn-info">Ver Historial</a>

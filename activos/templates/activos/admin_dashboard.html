@@ -5,125 +5,78 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="fw-bold"><i class="fas fa-chart-line me-2"></i>Dashboard Administrativo</h1>
-    <div>
-        <a href="{% url 'activos:home' %}" class="btn btn-primary me-2">
-            <i class="fas fa-list me-1"></i>Ver Activos
-        </a>
-        <a href="{% url 'activos:activo-create' %}" class="btn btn-success">
-            <i class="fas fa-plus me-1"></i>Nuevo Activo
-        </a>
-    </div>
+    <h1 class="h3 mb-0">Dashboard Administrativo</h1>
 </div>
 
 <!-- Tarjetas de resumen -->
 <div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm" style="border-left: 4px solid #667eea;">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Total Activos</h6>
-                        <h2 class="fw-bold mb-0">{{ total_activos }}</h2>
-                    </div>
-                    <div class="text-primary" style="font-size: 2.5rem;">
-                        <i class="fas fa-boxes"></i>
-                    </div>
-                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.75rem;">Total Activos</h6>
+                <h2 class="mb-0">{{ total_activos }}</h2>
             </div>
         </div>
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm" style="border-left: 4px solid #28a745;">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Asignados</h6>
-                        <h2 class="fw-bold mb-0">{{ asignados }}</h2>
-                    </div>
-                    <div class="text-success" style="font-size: 2.5rem;">
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.75rem;">Asignados</h6>
+                <h2 class="mb-0">{{ asignados }}</h2>
             </div>
         </div>
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm" style="border-left: 4px solid #ffc107;">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">En Bodega</h6>
-                        <h2 class="fw-bold mb-0">{{ en_bodega }}</h2>
-                    </div>
-                    <div class="text-warning" style="font-size: 2.5rem;">
-                        <i class="fas fa-warehouse"></i>
-                    </div>
-                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.75rem;">En Bodega</h6>
+                <h2 class="mb-0">{{ en_bodega }}</h2>
             </div>
         </div>
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm" style="border-left: 4px solid #dc3545;">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Dados de Baja</h6>
-                        <h2 class="fw-bold mb-0">{{ dados_baja }}</h2>
-                    </div>
-                    <div class="text-danger" style="font-size: 2.5rem;">
-                        <i class="fas fa-ban"></i>
-                    </div>
-                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.75rem;">Dados de Baja</h6>
+                <h2 class="mb-0">{{ dados_baja }}</h2>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Gráficos y estadísticas -->
+<!-- Estadísticas principales -->
 <div class="row g-3">
     <!-- Activos por Zona -->
     <div class="col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <h5 class="mb-0 text-white">
-                    <i class="fas fa-map-marker-alt me-2"></i>Top 5 Zonas con Más Activos
-                </h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0">Top 5 Zonas</h6>
             </div>
             <div class="card-body">
                 {% if activos_por_zona %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-sm table-hover mb-0">
                         <thead>
-                            <tr>
-                                <th>Zona</th>
-                                <th class="text-end">Cantidad</th>
-                                <th style="width: 50%;">Distribución</th>
+                            <tr class="text-muted" style="font-size: 0.75rem;">
+                                <th class="border-0">ZONA</th>
+                                <th class="border-0 text-end">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in activos_por_zona %}
                             <tr>
-                                <td><strong>{{ item.zona|default:"Sin zona" }}</strong></td>
+                                <td>{{ item.zona|default:"Sin zona" }}</td>
                                 <td class="text-end">{{ item.total }}</td>
-                                <td>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-primary" role="progressbar"
-                                            style="width: {% widthratio item.total total_activos 100 %}%">
-                                            {% widthratio item.total total_activos 100 %}%
-                                        </div>
-                                    </div>
-                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">No hay datos disponibles</p>
+                <p class="text-muted mb-0">No hay datos disponibles</p>
                 {% endif %}
             </div>
         </div>
@@ -131,43 +84,32 @@
 
     <!-- Activos por Categoría -->
     <div class="col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <h5 class="mb-0 text-white">
-                    <i class="fas fa-folder me-2"></i>Activos por Categoría
-                </h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0">Activos por Categoría</h6>
             </div>
             <div class="card-body">
                 {% if activos_por_categoria %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-sm table-hover mb-0">
                         <thead>
-                            <tr>
-                                <th>Categoría</th>
-                                <th class="text-end">Cantidad</th>
-                                <th style="width: 50%;">Porcentaje</th>
+                            <tr class="text-muted" style="font-size: 0.75rem;">
+                                <th class="border-0">CATEGORÍA</th>
+                                <th class="border-0 text-end">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in activos_por_categoria %}
                             <tr>
-                                <td><strong>{{ item.categoria__nombre }}</strong></td>
+                                <td>{{ item.categoria__nombre }}</td>
                                 <td class="text-end">{{ item.total }}</td>
-                                <td>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-info" role="progressbar"
-                                            style="width: {% widthratio item.total total_activos 100 %}%">
-                                            {% widthratio item.total total_activos 100 %}%
-                                        </div>
-                                    </div>
-                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">No hay datos disponibles</p>
+                <p class="text-muted mb-0">No hay datos disponibles</p>
                 {% endif %}
             </div>
         </div>
@@ -175,34 +117,32 @@
 
     <!-- Distribución por Estado -->
     <div class="col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <h5 class="mb-0 text-white">
-                    <i class="fas fa-chart-pie me-2"></i>Distribución por Estado
-                </h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0">Distribución por Estado</h6>
             </div>
             <div class="card-body">
                 {% if activos_por_estado %}
-                {% for item in activos_por_estado %}
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-bold">{{ item.estado|title }}</span>
-                        <span class="badge bg-secondary">{{ item.total }}</span>
-                    </div>
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar 
-                            {% if 'asignado' in item.estado %}bg-success
-                            {% elif 'confirmado' in item.estado %}bg-warning
-                            {% elif 'baja' in item.estado %}bg-danger
-                            {% else %}bg-secondary{% endif %}" role="progressbar"
-                            style="width: {% widthratio item.total total_activos 100 %}%">
-                            {% widthratio item.total total_activos 100 %}%
-                        </div>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr class="text-muted" style="font-size: 0.75rem;">
+                                <th class="border-0">ESTADO</th>
+                                <th class="border-0 text-end">CANTIDAD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in activos_por_estado %}
+                            <tr>
+                                <td>{{ item.estado|title }}</td>
+                                <td class="text-end">{{ item.total }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                {% endfor %}
                 {% else %}
-                <p class="text-muted">No hay datos disponibles</p>
+                <p class="text-muted mb-0">No hay datos disponibles</p>
                 {% endif %}
             </div>
         </div>
@@ -210,68 +150,33 @@
 
     <!-- Últimos Activos Registrados -->
     <div class="col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <h5 class="mb-0 text-dark">
-                    <i class="fas fa-clock me-2"></i>Últimos Activos Registrados
-                </h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0">Últimos Activos Registrados</h6>
             </div>
             <div class="card-body">
                 {% if ultimos_activos %}
                 <div class="list-group list-group-flush">
                     {% for activo in ultimos_activos %}
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item px-0 border-0 border-bottom">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h6 class="mb-1">{{ activo.activo }}</h6>
+                                <div class="mb-1">{{ activo.activo }}</div>
                                 <small class="text-muted">
-                                    <i class="fas fa-barcode me-1"></i>S/N: {{ activo.sn|default:"-" }}
-                                </small><br>
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>{{ activo.fecha_creacion|date:"d/m/Y H:i" }}
+                                    {{ activo.fecha_creacion|date:"d/m/Y H:i" }}
                                 </small>
                             </div>
-                            <span class="badge 
-                                {% if activo.estado == 'asignado' %}bg-success
-                                {% elif 'confirmado' in activo.estado %}bg-warning
-                                {% else %}bg-secondary{% endif %}">
-                                {{ activo.estado|title }}
-                            </span>
+                            <span class="badge bg-secondary">{{ activo.estado }}</span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted">No hay activos registrados</p>
+                <p class="text-muted mb-0">No hay activos registrados</p>
                 {% endif %}
             </div>
         </div>
     </div>
-
-    <!-- Activos por Operador -->
-    {% if activos_por_operador %}
-    <div class="col-lg-12">
-        <div class="card shadow-sm">
-            <div class="card-header" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
-                <h5 class="mb-0 text-dark">
-                    <i class="fas fa-signal me-2"></i>Activos por Operador
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for item in activos_por_operador %}
-                    <div class="col-md-4 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <h3 class="fw-bold text-primary mb-1">{{ item.total }}</h3>
-                            <p class="text-muted mb-0">{{ item.operador }}</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
 </div>
 

@@ -45,9 +45,9 @@
                 class="{% if 'user' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fa-solid fa-users"></i> Usuarios
             </a>
-            <a href="{% url 'activos:trazabilidad' %}"
-                class="{% if 'trazabilidad' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fa-solid fa-route"></i> Trazabilidad
+            <a href="{% url 'activos:tranzabilidad' %}"
+                class="{% if 'tranzabilidad' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-clock-rotate-left"></i> Tranzabilidad
             </a>
             <a href="{% url 'activos:reporte_por_sede' %}"
                 class="{% if 'reporte' in request.resolver_match.url_name %}active{% endif %}">
@@ -64,9 +64,9 @@
                 class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
                 <i class="fa-solid fa-mobile-screen-button"></i> Activos
             </a>
-            <a href="{% url 'activos:trazabilidad' %}"
-                class="{% if 'trazabilidad' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fa-solid fa-arrow-right-arrow-left"></i> Trazabilidad
+            <a href="{% url 'activos:tranzabilidad' %}"
+                class="{% if 'tranzabilidad' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-clock-rotate-left"></i> Tranzabilidad
             </a>
             {% endif %}
 

@@ -7,27 +7,27 @@ from django.http import HttpResponse
 import csv
 import json
 from openpyxl import Workbook
-from django.contrib.auth.models import Group
 from django.db import models
 from django.contrib import messages
-from .models import Activo, Trazabilidad, Historial, Zona, Categoria, Marca
+from .models import Activo, Tranzabilidad, Historial, Zona, Categoria, Marca
 from .forms import ActivoForm
 
 @login_required
 def dashboard_redirect(request):
-    user_groups = request.user.groups.values_list('name', flat=True)
-    if 'Admin' in user_groups:
+    if request.user.is_superuser or request.user.rol == 'admin':
         return redirect(reverse('activos:admin_dashboard'))
-    elif 'Logística' in user_groups:
+    elif request.user.rol == 'logistica':
         return redirect(reverse('activos:logistica_dashboard'))
-    elif 'Lectura' in user_groups:
+    elif request.user.rol == 'lectura':
         return redirect(reverse('activos:lectura_dashboard'))
+    elif request.user.rol == 'asignador':
+        return redirect(reverse('activos:home'))
     else:
         return redirect(reverse('activos:home'))
 
 @login_required
 def admin_dashboard(request):
-    if not request.user.groups.filter(name='Admin').exists():
+    if not (request.user.is_superuser or request.user.rol == 'admin'):
         return redirect('activos:home')
     
     # Estadísticas generales
@@ -39,17 +39,17 @@ def admin_dashboard(request):
     # Activos por zona
     from django.db.models import Count
     activos_por_zona = Activo.objects.values('zona').annotate(
-        total=Count('id')
+        total=Count('item')
     ).order_by('-total')[:5]  # Top 5 zonas
     
     # Activos por categoría
     activos_por_categoria = Activo.objects.values('categoria__nombre').annotate(
-        total=Count('id')
+        total=Count('item')
     ).order_by('-total')
     
     # Activos por estado
     activos_por_estado = Activo.objects.values('estado').annotate(
-        total=Count('id')
+        total=Count('item')
     ).order_by('-total')
     
     # Últimos 5 activos registrados
@@ -61,7 +61,7 @@ def admin_dashboard(request):
     ).exclude(
         operador=''
     ).values('operador').annotate(
-        total=Count('id')
+        total=Count('item')
     ).order_by('-total')
     
     return render(request, 'activos/admin_dashboard.html', {
@@ -78,10 +78,10 @@ def admin_dashboard(request):
 
 @login_required
 def logistica_dashboard(request):
-    if not request.user.groups.filter(name='Logística').exists():
+    if request.user.rol != 'logistica':
         return redirect('activos:home')
     activos_por_estado = Activo.objects.values('estado').annotate(count=models.Count('estado'))
-    movimientos_recientes = Trazabilidad.objects.order_by('-fecha')[:10]
+    movimientos_recientes = Tranzabilidad.objects.order_by('-fecha')[:10]
     return render(request, 'activos/logistica_dashboard.html', {
         'activos_por_estado': activos_por_estado,
         'movimientos_recientes': movimientos_recientes,
@@ -89,7 +89,7 @@ def logistica_dashboard(request):
 
 @login_required
 def lectura_dashboard(request):
-    if not request.user.groups.filter(name='Lectura').exists():
+    if request.user.rol != 'lectura':
         return redirect('activos:home')
     total_activos = Activo.objects.count()
     return render(request, 'activos/lectura_dashboard.html', {
@@ -289,7 +289,7 @@ class ActivoDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('activos:home')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para eliminar activos.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -298,7 +298,7 @@ class ActivoDeleteView(LoginRequiredMixin, DeleteView):
 @login_required
 def eliminar_multiples_activos(request):
     """Vista para eliminar múltiples activos"""
-    if not request.user.groups.filter(name='Admin').exists():
+    if request.user.rol != 'admin':
         messages.error(request, 'No tienes permisos para eliminar activos.')
         return redirect('activos:home')
     
@@ -336,27 +336,27 @@ def eliminar_multiples_activos(request):
 
 
 
-# Trazabilidad CRUD
-class TrazabilidadListView(LoginRequiredMixin, ListView):
-    model = Trazabilidad
-    template_name = 'activos/trazabilidad_list.html'
+# Tranzabilidad CRUD
+class TranzabilidadListView(LoginRequiredMixin, ListView):
+    model = Tranzabilidad
+    template_name = 'activos/tranzabilidad_list.html'
     context_object_name = 'movimientos'
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
-            messages.error(request, 'No tienes permisos para ver trazabilidad.')
+        if request.user.rol not in ['admin', 'logistica', 'asignador']:
+            messages.error(request, 'No tienes permisos para ver tranzabilidad.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
 
-# Trazabilidad registration
-class RegistrarTrazabilidadView(LoginRequiredMixin, CreateView):
-    model = Trazabilidad
+# Tranzabilidad registration
+class RegistrarTranzabilidadView(LoginRequiredMixin, CreateView):
+    model = Tranzabilidad
     fields = ['tipo', 'zona_origen', 'zona_destino', 'estado_nuevo', 'descripcion']
-    template_name = 'activos/registrar_trazabilidad.html'
+    template_name = 'activos/registrar_tranzabilidad.html'
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
-            messages.error(request, 'No tienes permisos para registrar trazabilidad.')
+        if request.user.rol not in ['admin', 'logistica']:
+            messages.error(request, 'No tienes permisos para registrar tranzabilidad.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
 
@@ -381,7 +381,7 @@ class RegistrarTrazabilidadView(LoginRequiredMixin, CreateView):
             activo.zona = form.cleaned_data['zona_destino']
             activo.save()
 
-        messages.success(self.request, 'Trazabilidad registrada exitosamente.')
+        messages.success(self.request, 'Tranzabilidad registrada exitosamente.')
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -393,7 +393,7 @@ class RegistrarTrazabilidadView(LoginRequiredMixin, CreateView):
 def historial_activo(request, pk):
     activo = get_object_or_404(Activo, pk=pk)
     historial = Historial.objects.filter(activo=activo).order_by('-fecha')
-    movimientos = Trazabilidad.objects.filter(activo=activo).order_by('-fecha')
+    movimientos = Tranzabilidad.objects.filter(activo=activo).order_by('-fecha')
     return render(request, 'activos/historial_activo.html', {
         'activo': activo,
         'historial': historial,
@@ -403,7 +403,7 @@ def historial_activo(request, pk):
 # Reporte por sede
 @login_required
 def reporte_por_sede(request):
-    if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
+    if request.user.rol not in ['admin', 'logistica', 'asignador']:
         messages.error(request, 'No tienes permisos para ver reportes.')
         return redirect('activos:home')
 
@@ -446,7 +446,7 @@ class ZonaListView(LoginRequiredMixin, ListView):
     context_object_name = 'zonas'
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para ver zonas.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -458,7 +458,7 @@ class ZonaCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('activos:zona_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para crear zonas.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -470,7 +470,7 @@ class ZonaUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('activos:zona_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para editar zonas.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -481,7 +481,7 @@ class ZonaDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('activos:zona_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para eliminar zonas.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -495,7 +495,7 @@ class CategoriaListView(LoginRequiredMixin, ListView):
     context_object_name = 'categorias'
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para ver categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -507,7 +507,7 @@ class CategoriaCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('activos:categoria_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para crear categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -536,7 +536,7 @@ class CategoriaUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('activos:categoria_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para editar categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
@@ -584,7 +584,7 @@ class CategoriaDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('activos:categoria_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
+        if request.user.rol != 'admin':
             messages.error(request, 'No tienes permisos para eliminar categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)

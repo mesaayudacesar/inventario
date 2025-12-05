@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class Zona(models.Model):
@@ -108,7 +108,7 @@ class Activo(models.Model):
         verbose_name_plural = "Activos"
 
 
-class Trazabilidad(models.Model):
+class Tranzabilidad(models.Model):
     TIPO_CHOICES = [
         ('ingreso', 'Ingreso'),
         ('salida', 'Salida'),
@@ -117,8 +117,8 @@ class Trazabilidad(models.Model):
     ]
 
     activo = models.ForeignKey(Activo, on_delete=models.CASCADE, verbose_name="Activo")
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo de Trazabilidad")
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo de Tranzabilidad")
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Usuario")
     zona_origen = models.CharField(max_length=100, blank=True, null=True, verbose_name="Zona Origen")
     zona_destino = models.CharField(max_length=100, blank=True, null=True, verbose_name="Zona Destino")
     estado_anterior = models.CharField(max_length=100, blank=True, null=True, verbose_name="Estado Anterior")
@@ -130,15 +130,15 @@ class Trazabilidad(models.Model):
         return f"{self.tipo} - {self.activo} - {self.fecha}"
 
     class Meta:
-        verbose_name = "Trazabilidad"
-        verbose_name_plural = "Trazabilidad"
+        verbose_name = "Tranzabilidad"
+        verbose_name_plural = "Tranzabilidad"
         ordering = ['-fecha']
-        db_table = 'activos_trazabilidad'
+        db_table = 'activos_tranzabilidad'
 
 
 class Historial(models.Model):
     activo = models.ForeignKey(Activo, on_delete=models.CASCADE, verbose_name="Activo")
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario")
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Usuario")
     campo_cambiado = models.CharField(max_length=100, verbose_name="Campo Cambiado")
     valor_anterior = models.TextField(blank=True, null=True, verbose_name="Valor Anterior")
     valor_nuevo = models.TextField(blank=True, null=True, verbose_name="Valor Nuevo")

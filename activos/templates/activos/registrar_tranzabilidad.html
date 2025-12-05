@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}Registrar Trazabilidad{% endblock %}
+{% block title %}Registrar Tranzabilidad{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-md-6">
-        <h1>Registrar Trazabilidad para {{ activo.activo }}</h1>
+        <h1>Registrar Tranzabilidad para {{ activo.activo }}</h1>
         <form method="post">
             {% csrf_token %}
             <div class="form-group mb-3">
-                <label for="tipo" class="form-label">Tipo de Trazabilidad</label>
+                <label for="tipo" class="form-label">Tipo de Tranzabilidad</label>
                 <select name="tipo" class="form-control" required>
                     <option value="ingreso">Ingreso</option>
                     <option value="salida">Salida</option>
@@ -43,7 +43,7 @@
                 <label for="descripcion" class="form-label">Descripción</label>
                 <textarea name="descripcion" class="form-control"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">Registrar Trazabilidad</button>
+            <button type="submit" class="btn btn-primary">Registrar Tranzabilidad</button>
             <a href="{% url 'activos:activo_detail' activo.pk %}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

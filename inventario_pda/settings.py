@@ -125,3 +125,6 @@ STATICFILES_DIRS = [
 LOGIN_REDIRECT_URL = '/activos/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'usuarios:login'
+
+# Modelo de usuario personalizado
+AUTH_USER_MODEL = 'usuarios.Usuario'

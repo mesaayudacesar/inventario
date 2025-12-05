@@ -1,13 +1,13 @@
 def user_groups(request):
     """
-    Context processor to add user group information to all templates.
+    Añade información del rol del usuario al contexto de todas las plantillas
     """
     if request.user.is_authenticated:
-        groups = list(request.user.groups.values_list('name', flat=True))
         return {
-            'user_groups': groups,
-            'user_is_admin': 'Admin' in groups,
-            'user_is_logistica': 'Logística' in groups,
-            'user_is_lectura': 'Lectura' in groups,
+            'user_rol': request.user.rol,
+            'user_is_admin': request.user.rol == 'admin',
+            'user_is_logistica': request.user.rol == 'logistica',
+            'user_is_lectura': request.user.rol == 'lectura',
+            'user_is_asignador': request.user.rol == 'asignador',
         }
     return {}
