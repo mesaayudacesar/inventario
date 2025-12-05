@@ -97,46 +97,52 @@
     <h1 class="fw-bold">Activos</h1>
     {% if user.groups.all.0.name == 'Admin' %}
     <a href="{% url 'activos:activo-create' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i> Nuevo Activo
+        <i class="fas fa-plus me-2"></i>Nuevo Activo
     </a>
     {% endif %}
 </div>
 
-<!-- Formulario de Filtros -->
-<div class="card mb-4">
+<!-- Formulario de búsqueda -->
+<div class="card mb-4 shadow-sm">
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
-                <label for="documento" class="form-label">
-                    <i class="fas fa-id-card me-1"></i> Documento del Asesor
+                <label for="documento" class="form-label fw-semibold">
+                    <i class="fas fa-id-card me-1"></i>Documento
                 </label>
-                <input type="text" class="form-control" id="documento" name="documento" value="{{ filtro_documento }}"
-                    placeholder="Buscar por documento...">
+                <input type="text" class="form-control" id="documento" name="documento"
+                    placeholder="Buscar por documento" value="{{ filtro_documento }}">
             </div>
             <div class="col-md-4">
-                <label for="sn" class="form-label">
-                    <i class="fas fa-barcode me-1"></i> Número de Serie (S/N)
+                <label for="sn" class="form-label fw-semibold">
+                    <i class="fas fa-barcode me-1"></i>S/N
                 </label>
-                <input type="text" class="form-control" id="sn" name="sn" value="{{ filtro_sn }}"
-                    placeholder="Buscar por S/N...">
+                <input type="text" class="form-control" id="sn" name="sn" placeholder="Buscar por S/N"
+                    value="{{ filtro_sn }}">
             </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
-                    <i class="fas fa-search me-1"></i> Buscar
+            <div class="col-md-4">
+                <label for="activo" class="form-label fw-semibold">
+                    <i class="fas fa-box me-1"></i>Activo
+                </label>
+                <input type="text" class="form-control" id="activo" name="activo" placeholder="Buscar por activo"
+                    value="{{ filtro_activo }}">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Buscar
                 </button>
                 <a href="{% url 'activos:home' %}" class="btn btn-secondary">
-                    <i class="fas fa-times me-1"></i> Limpiar
+                    <i class="fas fa-times me-2"></i>Limpiar
                 </a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Tabla de Activos -->
-<div class="card">
+<div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle mb-0">
+            <table class="table table-hover table-striped mb-0">
                 <thead class="table-dark">
                     <tr>
                         <th class="text-center" style="width: 50px;"></th>
@@ -166,7 +172,7 @@
                     <tr>
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
-                            {% if filtro_documento or filtro_sn %}
+                            {% if filtro_documento or filtro_sn or filtro_activo %}
                             No se encontraron activos con los filtros aplicados.
                             {% else %}
                             No hay activos registrados.
@@ -274,16 +280,16 @@
                     : `¿Estás seguro de eliminar ${count} activos?`;
 
                 if (confirm(message)) {
-                if (count === 1) {
-                    // Eliminación individual
-                    const pk = checked[0].dataset.pk;
-                    window.location.href = `/activos/${pk}/eliminar/`;
-                } else {
-                    // Eliminación múltiple
-                    const ids = checked.map(cb => cb.dataset.pk);
-                    const params = ids.map(id => `ids=${id}`).join('&');
-                    window.location.href = `/activos/eliminar-multiples/?${params}`;
-                        }
+                    if (count === 1) {
+                        // Eliminación individual
+                        const pk = checked[0].dataset.pk;
+                        window.location.href = `/activos/${pk}/eliminar/`;
+                    } else {
+                        // Eliminación múltiple
+                        const ids = checked.map(cb => cb.dataset.pk);
+                        const params = ids.map(id => `ids=${id}`).join('&');
+                        window.location.href = `/activos/eliminar-multiples/?${params}`;
+                    }
                 }
             });
         }
