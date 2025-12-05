@@ -12,35 +12,44 @@
 </div>
 
 {% if categorias %}
-<div class="card">
-    <div class="card-body">
+<div class="card shadow-sm">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Fecha de Creación</th>
-                        <th class="text-center">Acciones</th>
+                        <th class="text-white">Categoría</th>
+                        <th class="text-white">Marcas (Subcategorías)</th>
+                        <th class="text-white text-center" style="width: 150px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for categoria in categorias %}
                     <tr>
-                        <td>{{ categoria.id }}</td>
-                        <td><strong>{{ categoria.nombre }}</strong></td>
-                        <td>{{ categoria.descripcion|default:"Sin descripción" }}</td>
-                        <td>{{ categoria.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <strong><i class="fas fa-folder me-2 text-primary"></i>{{ categoria.nombre }}</strong>
+                        </td>
+                        <td>
+                            {% if categoria.marcas.all %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for marca in categoria.marcas.all %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-tag me-1"></i>{{ marca.nombre }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted small"><i>Sin marcas</i></span>
+                            {% endif %}
+                        </td>
                         <td class="text-center">
-                            <a href="{% url 'activos:categoria_update' categoria.pk %}" 
-                               class="btn btn-sm btn-primary me-1" 
-                               title="Editar">
-                                <i class="fas fa-edit"></i>
+                            <a href="{% url 'activos:categoria_update' categoria.pk %}"
+                                class="btn btn-sm btn-primary me-1" title="Editar">
+                                <i class="fas fa-edit"></i> Editar
                             </a>
-                            <a href="{% url 'activos:categoria_delete' categoria.pk %}" 
-                               class="btn btn-sm btn-danger" 
-                               title="Eliminar">
+                            <a href="{% url 'activos:categoria_delete' categoria.pk %}" class="btn btn-sm btn-danger"
+                                title="Eliminar"
+                                onclick="return confirm('¿Eliminar categoría {{ categoria.nombre }}? Esto eliminará también todas sus marcas.')">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </td>
@@ -54,7 +63,8 @@
 {% else %}
 <div class="alert alert-info">
     <i class="fas fa-info-circle me-2"></i>
-    No hay categorías registradas. <a href="{% url 'activos:categoria_create' %}" class="alert-link">Crear la primera categoría</a>
+    No hay categorías registradas. <a href="{% url 'activos:categoria_create' %}" class="alert-link">Crear la primera
+        categoría</a>
 </div>
 {% endif %}
 

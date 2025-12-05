@@ -274,13 +274,16 @@
                     : `¿Estás seguro de eliminar ${count} activos?`;
 
                 if (confirm(message)) {
-                    // Eliminar uno por uno
-                    if (count === 1) {
-                        const pk = checked[0].dataset.pk;
-                        window.location.href = `/activos/${pk}/eliminar/`;
-                    } else {
-                        alert('La eliminación múltiple no está implementada aún. Por favor selecciona un solo activo.');
-                    }
+                if (count === 1) {
+                    // Eliminación individual
+                    const pk = checked[0].dataset.pk;
+                    window.location.href = `/activos/${pk}/eliminar/`;
+                } else {
+                    // Eliminación múltiple
+                    const ids = checked.map(cb => cb.dataset.pk);
+                    const params = ids.map(id => `ids=${id}`).join('&');
+                    window.location.href = `/activos/eliminar-multiples/?${params}`;
+                        }
                 }
             });
         }

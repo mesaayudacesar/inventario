@@ -50,6 +50,8 @@ class Activo(models.Model):
     imei1 = models.CharField(max_length=100, blank=True, null=True, verbose_name="IMEI 1")
     imei2 = models.CharField(max_length=100, blank=True, null=True, verbose_name="IMEI 2")
     sn = models.CharField(max_length=100, blank=True, null=True, verbose_name="S/N")
+    iccid = models.CharField(max_length=100, blank=True, null=True, verbose_name="ICCID")
+    operador = models.CharField(max_length=50, blank=True, null=True, verbose_name="OPERADOR")
     mac_superflex = models.CharField(max_length=100, blank=True, null=True, verbose_name="MAC SUPERFLEX")
     marca_old = models.CharField(max_length=100, blank=True, null=True, verbose_name="MARCA OLD")  # Campo temporal
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="MARCA")
@@ -68,6 +70,35 @@ class Activo(models.Model):
     fecha_salida_bodega = models.DateField(blank=True, null=True, verbose_name="FECHA DE SALIDA DE BODEGA")
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     fecha_modificacion = models.DateTimeField(auto_now=True, verbose_name="Fecha de Modificación")
+
+    def detectar_operador(self):
+        """Detecta el operador basado en el ICCID"""
+        if not self.iccid:
+            return None
+        
+        iccid = self.iccid.strip()
+        
+        # Tigo - verificar primero 89577 (más específico)
+        if iccid.startswith('89577'):
+            return 'Tigo'
+        
+        # Claro - verificar 57101
+        if iccid.startswith('57101'):
+            return 'Claro'
+        
+        # Movistar - verificar 8957 (más genérico, va al final)
+        if iccid.startswith('8957'):
+            return 'Movistar'
+        
+        return None
+
+    def save(self, *args, **kwargs):
+        # Detectar operador automáticamente antes de guardar
+        if self.iccid:
+            operador_detectado = self.detectar_operador()
+            if operador_detectado:
+                self.operador = operador_detectado
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Activo {self.item} - {self.activo}"

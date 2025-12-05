@@ -29,15 +29,51 @@ def dashboard_redirect(request):
 def admin_dashboard(request):
     if not request.user.groups.filter(name='Admin').exists():
         return redirect('activos:home')
+    
+    # Estadísticas generales
     total_activos = Activo.objects.count()
     asignados = Activo.objects.filter(estado__icontains='asignado').count()
-    en_bodega = Activo.objects.filter(estado__icontains='bodega').count()
+    en_bodega = Activo.objects.filter(estado__icontains='confirmado').count()
     dados_baja = Activo.objects.filter(estado__icontains='baja').count()
+    
+    # Activos por zona
+    from django.db.models import Count
+    activos_por_zona = Activo.objects.values('zona').annotate(
+        total=Count('id')
+    ).order_by('-total')[:5]  # Top 5 zonas
+    
+    # Activos por categoría
+    activos_por_categoria = Activo.objects.values('categoria__nombre').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
+    # Activos por estado
+    activos_por_estado = Activo.objects.values('estado').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
+    # Últimos 5 activos registrados
+    ultimos_activos = Activo.objects.order_by('-fecha_creacion')[:5]
+    
+    # Activos por operador
+    activos_por_operador = Activo.objects.exclude(
+        operador__isnull=True
+    ).exclude(
+        operador=''
+    ).values('operador').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
     return render(request, 'activos/admin_dashboard.html', {
         'total_activos': total_activos,
         'asignados': asignados,
         'en_bodega': en_bodega,
         'dados_baja': dados_baja,
+        'activos_por_zona': activos_por_zona,
+        'activos_por_categoria': activos_por_categoria,
+        'activos_por_estado': activos_por_estado,
+        'ultimos_activos': ultimos_activos,
+        'activos_por_operador': activos_por_operador,
     })
 
 @login_required
@@ -77,6 +113,11 @@ class ActivoListView(LoginRequiredMixin, ListView):
         sn = self.request.GET.get('sn', '').strip()
         if sn:
             queryset = queryset.filter(sn__icontains=sn)
+
+        # Filtro por activo
+        activo = self.request.GET.get('activo', '').strip()
+        if activo:
+            queryset = queryset.filter(activo__icontains=activo)
         
         return queryset
     
@@ -85,6 +126,7 @@ class ActivoListView(LoginRequiredMixin, ListView):
         # Pasar los valores de los filtros al contexto para mantenerlos en el formulario
         context['filtro_documento'] = self.request.GET.get('documento', '')
         context['filtro_sn'] = self.request.GET.get('sn', '')
+        context['filtro_activo'] = self.request.GET.get('activo', '')
         return context
 
 
@@ -110,9 +152,10 @@ def exportar_excel(request):
 
     # Headers
     headers = ['ITEM', 'DOCUMENTO', 'NOMBRES Y APELLIDOS', 'IMEI 1', 'IMEI 2', 'S/N', 
-               'MAC SUPERFLEX', 'MARCA', 'ACTIVO', 'CARGO', 'ESTADO', 'FECHA CONFIRMACIÓN',
-               'RESPONSABLE', 'IDENTIFICACIÓN', 'ZONA', 'CATEGORÍA', 'OBSERVACIÓN', 
-               'PUNTO DE VENTA', 'CÓDIGO CENTRO COSTO', 'CENTRO COSTO PUNTO', 'FECHA SALIDA BODEGA']
+               'ICCID', 'OPERADOR', 'MAC SUPERFLEX', 'MARCA', 'ACTIVO', 'CARGO', 'ESTADO', 
+               'FECHA CONFIRMACIÓN', 'RESPONSABLE', 'IDENTIFICACIÓN', 'ZONA', 'CATEGORÍA', 
+               'OBSERVACIÓN', 'PUNTO DE VENTA', 'CÓDIGO CENTRO COSTO', 'CENTRO COSTO PUNTO', 
+               'FECHA SALIDA BODEGA']
     
     ws.append(headers)
     
@@ -132,6 +175,8 @@ def exportar_excel(request):
             activo.imei1 or '',
             activo.imei2 or '',
             activo.sn or '',
+            activo.iccid or '',
+            activo.operador or '',
             activo.mac_superflex or '',
             activo.marca or '',
             activo.activo or '',
@@ -250,6 +295,44 @@ class ActivoDeleteView(LoginRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
 
+@login_required
+def eliminar_multiples_activos(request):
+    """Vista para eliminar múltiples activos"""
+    if not request.user.groups.filter(name='Admin').exists():
+        messages.error(request, 'No tienes permisos para eliminar activos.')
+        return redirect('activos:home')
+    
+    if request.method == 'POST':
+        # Obtener los IDs de los activos a eliminar
+        activos_ids = request.POST.getlist('activos_ids')
+        
+        if not activos_ids:
+            messages.warning(request, 'No se seleccionaron activos para eliminar.')
+            return redirect('activos:home')
+        
+        # Eliminar los activos
+        activos_eliminados = Activo.objects.filter(pk__in=activos_ids)
+        cantidad = activos_eliminados.count()
+        activos_eliminados.delete()
+        
+        messages.success(request, f'Se eliminaron {cantidad} activo(s) exitosamente.')
+        return redirect('activos:home')
+    
+    # GET request - mostrar confirmación
+    activos_ids = request.GET.getlist('ids')
+    
+    if not activos_ids:
+        messages.warning(request, 'No se seleccionaron activos para eliminar.')
+        return redirect('activos:home')
+    
+    activos = Activo.objects.filter(pk__in=activos_ids)
+    
+    return render(request, 'activos/activo_confirm_delete_multiple.html', {
+        'activos': activos,
+        'activos_ids': activos_ids,
+    })
+
+
 
 
 
@@ -349,46 +432,9 @@ def exportar_csv(request):
         writer.writerow([str(getattr(activo, field.name)) for field in Activo._meta.get_fields()])
     return response
 
-# Update ActivoUpdateView for permissions
-class ActivoUpdateView(LoginRequiredMixin, UpdateView):
-    model = Activo
-    fields = '__all__'
-    template_name = 'activos/activo_form.html'
-    success_url = reverse_lazy('activos:home')
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name__in=['Admin', 'Logística']).exists():
-            messages.error(request, 'No tienes permisos para editar activos.')
-            return redirect('activos:home')
-        return super().dispatch(request, *args, **kwargs)
 
-# Update ActivoCreateView for permissions
-class ActivoCreateView(LoginRequiredMixin, CreateView):
-    model = Activo
-    form_class = ActivoForm
-    template_name = 'activos/activo_form.html'
-    success_url = reverse_lazy('activos:home')
-    
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['is_update'] = False
-        return kwargs
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Datos para autocompletado
-        context['documentos'] = Activo.objects.exclude(documento__isnull=True).exclude(documento='').values_list('documento', flat=True).distinct()
-        context['nombres'] = Activo.objects.exclude(nombres_apellidos__isnull=True).exclude(nombres_apellidos='').values_list('nombres_apellidos', flat=True).distinct()
-        context['identificaciones'] = Activo.objects.exclude(identificacion__isnull=True).exclude(identificacion='').values_list('identificacion', flat=True).distinct()
-        context['codigos_centro'] = Activo.objects.exclude(codigo_centro_costo__isnull=True).exclude(codigo_centro_costo='').values_list('codigo_centro_costo', flat=True).distinct()
-        context['nombres_centro'] = Activo.objects.exclude(centro_costo_punto__isnull=True).exclude(centro_costo_punto='').values_list('centro_costo_punto', flat=True).distinct()
-        return context
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name='Admin').exists():
-            messages.error(request, 'No tienes permisos para crear activos.')
-            return redirect('activos:home')
-        return super().dispatch(request, *args, **kwargs)
 
 
 
@@ -456,7 +502,7 @@ class CategoriaListView(LoginRequiredMixin, ListView):
 
 class CategoriaCreateView(LoginRequiredMixin, CreateView):
     model = Categoria
-    fields = '__all__'
+    fields = ['nombre']
     template_name = 'activos/category_form.html'
     success_url = reverse_lazy('activos:categoria_list')
 
@@ -465,10 +511,27 @@ class CategoriaCreateView(LoginRequiredMixin, CreateView):
             messages.error(request, 'No tienes permisos para crear categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        # Guardar la categoría primero
+        response = super().form_valid(form)
+        
+        # Procesar las marcas
+        marca_nombres = self.request.POST.getlist('marca_nombre[]')
+        
+        for nombre in marca_nombres:
+            if nombre.strip():  # Solo crear si el nombre no está vacío
+                Marca.objects.create(
+                    nombre=nombre.strip(),
+                    categoria=self.object
+                )
+        
+        messages.success(self.request, f'Categoría "{self.object.nombre}" creada exitosamente con {len([n for n in marca_nombres if n.strip()])} marca(s).')
+        return response
 
 class CategoriaUpdateView(LoginRequiredMixin, UpdateView):
     model = Categoria
-    fields = '__all__'
+    fields = ['nombre']
     template_name = 'activos/category_form.html'
     success_url = reverse_lazy('activos:categoria_list')
 
@@ -477,6 +540,43 @@ class CategoriaUpdateView(LoginRequiredMixin, UpdateView):
             messages.error(request, 'No tienes permisos para editar categorías.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        # Guardar la categoría primero
+        response = super().form_valid(form)
+        
+        # Obtener marcas del formulario
+        marca_nombres = self.request.POST.getlist('marca_nombre[]')
+        marca_ids = self.request.POST.getlist('marca_id[]')
+        
+        # IDs de marcas que se mantienen o actualizan
+        marcas_actualizadas = []
+        
+        # Procesar marcas
+        for i, nombre in enumerate(marca_nombres):
+            if nombre.strip():
+                marca_id = marca_ids[i] if i < len(marca_ids) and marca_ids[i] else None
+                
+                if marca_id:  # Marca existente - actualizar
+                    try:
+                        marca = Marca.objects.get(pk=marca_id, categoria=self.object)
+                        marca.nombre = nombre.strip()
+                        marca.save()
+                        marcas_actualizadas.append(int(marca_id))
+                    except Marca.DoesNotExist:
+                        pass
+                else:  # Marca nueva - crear
+                    nueva_marca = Marca.objects.create(
+                        nombre=nombre.strip(),
+                        categoria=self.object
+                    )
+                    marcas_actualizadas.append(nueva_marca.id)
+        
+        # Eliminar marcas que ya no están en el formulario
+        Marca.objects.filter(categoria=self.object).exclude(id__in=marcas_actualizadas).delete()
+        
+        messages.success(self.request, f'Categoría "{self.object.nombre}" actualizada exitosamente.')
+        return response
 
 class CategoriaDeleteView(LoginRequiredMixin, DeleteView):
     model = Categoria

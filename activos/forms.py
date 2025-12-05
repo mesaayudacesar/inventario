@@ -68,6 +68,8 @@ class ActivoForm(forms.ModelForm):
             'imei1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'IMEI 1'}),
             'imei2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'IMEI 2'}),
             'sn': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de serie'}),
+            'iccid': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ICCID', 'id': 'id_iccid'}),
+            'operador': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'id_operador'}),
             'mac_superflex': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'MAC Superflex'}),
             'activo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del activo'}),
             'punto_venta': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Punto de venta'}),
@@ -109,6 +111,17 @@ class ActivoForm(forms.ModelForm):
         # Configurar marca para que no muestre "----" si hay opciones
         if self.fields['marca'].queryset.exists():
             self.fields['marca'].empty_label = "Seleccione una marca"
+        
+        # Hacer obligatorios todos los campos de la sección "Datos del Activo"
+        campos_obligatorios = [
+            'categoria', 'marca', 'activo', 'sn', 
+            'imei1', 'imei2', 'estado', 'zona', 
+            'responsable', 'identificacion'
+        ]
+        
+        for campo in campos_obligatorios:
+            if campo in self.fields:
+                self.fields[campo].required = True
     
     def save(self, commit=True):
         instance = super().save(commit=False)

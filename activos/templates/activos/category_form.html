@@ -11,39 +11,140 @@
     </h1>
 </div>
 
-<div class="card">
+<div class="card shadow-sm">
+    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h5 class="mb-0 text-white">Información de la Categoría</h5>
+    </div>
     <div class="card-body">
-        <form method="post">
+        <form method="post" id="categoriaForm">
             {% csrf_token %}
 
-            <div class="mb-3">
+            <div class="mb-4">
                 <label for="id_nombre" class="form-label fw-bold">Nombre de la Categoría *</label>
                 <input type="text" name="nombre" class="form-control" id="id_nombre"
-                    value="{{ form.nombre.value|default:'' }}" required>
+                    value="{{ form.nombre.value|default:'' }}" required
+                    placeholder="Ej: Equipos Móviles, Computadores, Tablets...">
                 {% if form.nombre.errors %}
                 <div class="text-danger mt-1">{{ form.nombre.errors }}</div>
                 {% endif %}
             </div>
 
+            <hr>
+
             <div class="mb-3">
-                <label for="id_descripcion" class="form-label fw-bold">Descripción</label>
-                <textarea name="descripcion" class="form-control" id="id_descripcion"
-                    rows="4">{{ form.descripcion.value|default:'' }}</textarea>
-                {% if form.descripcion.errors %}
-                <div class="text-danger mt-1">{{ form.descripcion.errors }}</div>
-                {% endif %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="fas fa-tags me-2"></i>Marcas (Subcategorías)</h6>
+                    <button type="button" class="btn btn-sm btn-success" id="addMarcaBtn">
+                        <i class="fas fa-plus me-1"></i>Agregar Marca
+                    </button>
+                </div>
+
+                <div id="marcasContainer">
+                    {% if object and object.marcas.all %}
+                    {% for marca in object.marcas.all %}
+                    <div class="marca-item mb-2 p-3 border rounded bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-10">
+                                <input type="text" name="marca_nombre[]" class="form-control" value="{{ marca.nombre }}"
+                                    placeholder="Nombre de la marca" required>
+                                <input type="hidden" name="marca_id[]" value="{{ marca.id }}">
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-marca">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay marcas agregadas. Haz clic en "Agregar Marca" para comenzar.
+                    </div>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save me-2"></i>Guardar
-                </button>
+            <hr>
+
+            <div class="d-flex gap-2 justify-content-end">
                 <a href="{% url 'activos:categoria_list' %}" class="btn btn-secondary">
                     <i class="fas fa-times me-2"></i>Cancelar
                 </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>Guardar Categoría
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const addBtn = document.getElementById('addMarcaBtn');
+        const container = document.getElementById('marcasContainer');
+        let marcaCount = {{ object.marcas.count|default: 0
+    }};
+
+    // Eliminar el mensaje de info si existe
+    function removeInfoAlert() {
+        const alert = container.querySelector('.alert-info');
+        if (alert) {
+            alert.remove();
+        }
+    }
+
+    // Agregar nueva marca
+    addBtn.addEventListener('click', function () {
+        removeInfoAlert();
+
+        const marcaHtml = `
+            <div class="marca-item mb-2 p-3 border rounded bg-light">
+                <div class="row align-items-center">
+                    <div class="col-md-10">
+                        <input type="text" name="marca_nombre[]" class="form-control" 
+                               placeholder="Nombre de la marca (Ej: Samsung, Apple, HP...)" required>
+                        <input type="hidden" name="marca_id[]" value="">
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-danger btn-sm remove-marca">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', marcaHtml);
+        marcaCount++;
+        attachRemoveHandlers();
+    });
+
+    // Manejar eliminación de marcas
+    function attachRemoveHandlers() {
+        document.querySelectorAll('.remove-marca').forEach(btn => {
+            btn.onclick = function () {
+                if (confirm('¿Eliminar esta marca?')) {
+                    this.closest('.marca-item').remove();
+                    marcaCount--;
+
+                    // Si no quedan marcas, mostrar mensaje
+                    if (marcaCount === 0 && container.querySelectorAll('.marca-item').length === 0) {
+                        container.innerHTML = `
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                No hay marcas agregadas. Haz clic en "Agregar Marca" para comenzar.
+                            </div>
+                        `;
+                    }
+                }
+            };
+        });
+    }
+
+    attachRemoveHandlers();
+});
+</script>
 
 {% endblock %}

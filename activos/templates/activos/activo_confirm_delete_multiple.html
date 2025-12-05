@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Eliminación de Múltiples Activos{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación de {{ activos.count }} Activo(s)
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer. Los siguientes activos serán
+                        eliminados permanentemente:
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ITEM</th>
+                                    <th>S/N</th>
+                                    <th>ACTIVO</th>
+                                    <th>MARCA</th>
+                                    <th>DOCUMENTO</th>
+                                    <th>NOMBRES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activo in activos %}
+                                <tr>
+                                    <td>{{ activo.item }}</td>
+                                    <td>{{ activo.sn|default:"-" }}</td>
+                                    <td>{{ activo.activo|default:"-" }}</td>
+                                    <td>{{ activo.marca|default:"-" }}</td>
+                                    <td>{{ activo.documento|default:"-" }}</td>
+                                    <td>{{ activo.nombres_apellidos|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for id in activos_ids %}
+                        <input type="hidden" name="activos_ids" value="{{ id }}">
+                        {% endfor %}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'activos:home' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-2"></i>Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

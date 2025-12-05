@@ -9,8 +9,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white py-3">
-                    <h4 class="mb-0">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h4 class="mb-0 text-white">
                         <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
                         {% if form.instance.pk %}Editar Activo{% else %}Crear Nuevo Activo{% endif %}
                     </h4>
@@ -19,8 +19,119 @@
                     <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
 
-                        <div class="row g-3">
-                            <!-- Fila 1: Documento y Nombres -->
+                        <!-- Sección: Datos del Activo -->
+                        <div class="section-header mb-3">
+                            <h5 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-laptop me-2"></i>Datos del Activo
+                            </h5>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label for="{{ form.categoria.id_for_label }}"
+                                    class="form-label fw-bold">Categoría</label>
+                                {{ form.categoria }}
+                                {% if form.categoria.errors %}
+                                <div class="text-danger small">{{ form.categoria.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.marca.id_for_label }}" class="form-label fw-bold">Marca</label>
+                                {{ form.marca }}
+                                {% if form.marca.errors %}
+                                <div class="text-danger small">{{ form.marca.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.activo.id_for_label }}" class="form-label fw-bold">Activo</label>
+                                {{ form.activo }}
+                                {% if form.activo.errors %}
+                                <div class="text-danger small">{{ form.activo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.sn.id_for_label }}" class="form-label fw-bold">S/N</label>
+                                {{ form.sn }}
+                                {% if form.sn.errors %}
+                                <div class="text-danger small">{{ form.sn.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.imei1.id_for_label }}" class="form-label fw-bold">IMEI 1</label>
+                                {{ form.imei1 }}
+                                {% if form.imei1.errors %}
+                                <div class="text-danger small">{{ form.imei1.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.imei2.id_for_label }}" class="form-label fw-bold">IMEI 2</label>
+                                {{ form.imei2 }}
+                                {% if form.imei2.errors %}
+                                <div class="text-danger small">{{ form.imei2.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">Estado</label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                <div class="text-danger small">{{ form.estado.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.zona.id_for_label }}" class="form-label fw-bold">Zona</label>
+                                {{ form.zona }}
+                                {% if form.zona.errors %}
+                                <div class="text-danger small">{{ form.zona.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.responsable.id_for_label }}"
+                                    class="form-label fw-bold">Responsable</label>
+                                {{ form.responsable }}
+                                {% if form.responsable.errors %}
+                                <div class="text-danger small">{{ form.responsable.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.identificacion.id_for_label }}"
+                                    class="form-label fw-bold">Identificación del Responsable</label>
+                                {{ form.identificacion }}
+                                {% if form.identificacion.errors %}
+                                <div class="text-danger small">{{ form.identificacion.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Sección: Asignación -->
+                        <div class="section-header mb-3">
+                            <h5 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-clipboard-list me-2"></i>Asignación
+                            </h5>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="{{ form.iccid.id_for_label }}" class="form-label fw-bold">ICCID</label>
+                                {{ form.iccid }}
+                                {% if form.iccid.errors %}
+                                <div class="text-danger small">{{ form.iccid.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.operador.id_for_label }}"
+                                    class="form-label fw-bold">Operador</label>
+                                {{ form.operador }}
+                                <small class="text-muted d-block">Se detecta automáticamente</small>
+                                {% if form.operador.errors %}
+                                <div class="text-danger small">{{ form.operador.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.mac_superflex.id_for_label }}" class="form-label fw-bold">MAC
+                                    SUPERFLEX</label>
+                                {{ form.mac_superflex }}
+                                {% if form.mac_superflex.errors %}
+                                <div class="text-danger small">{{ form.mac_superflex.errors.0 }}</div>
+                                {% endif %}
+                            </div>
                             <div class="col-md-6">
                                 <label for="{{ form.documento.id_for_label }}"
                                     class="form-label fw-bold">Documento</label>
@@ -37,76 +148,14 @@
                                 <div class="text-danger small">{{ form.nombres_apellidos.errors.0 }}</div>
                                 {% endif %}
                             </div>
-
-                            <!-- Fila 2: Categoría y Marca -->
-                            <div class="col-md-6">
-                                <label for="{{ form.categoria.id_for_label }}"
-                                    class="form-label fw-bold">Categoría</label>
-                                {{ form.categoria }}
-                                {% if form.categoria.errors %}
-                                <div class="text-danger small">{{ form.categoria.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.marca.id_for_label }}" class="form-label fw-bold">Marca</label>
-                                {{ form.marca }}
-                                {% if form.marca.errors %}
-                                <div class="text-danger small">{{ form.marca.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Fila 3: Estado y Zona -->
-                            <div class="col-md-6">
-                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">Estado</label>
-                                {{ form.estado }}
-                                {% if form.estado.errors %}
-                                <div class="text-danger small">{{ form.estado.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.zona.id_for_label }}" class="form-label fw-bold">Zona</label>
-                                {{ form.zona }}
-                                {% if form.zona.errors %}
-                                <div class="text-danger small">{{ form.zona.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Fila 4: Identificación del Responsable y Responsable -->
-                            <div class="col-md-6">
-                                <label for="{{ form.identificacion.id_for_label }}"
-                                    class="form-label fw-bold">Identificación del Responsable</label>
-                                {{ form.identificacion }}
-                                {% if form.identificacion.errors %}
-                                <div class="text-danger small">{{ form.identificacion.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.responsable.id_for_label }}"
-                                    class="form-label fw-bold">Responsable</label>
-                                {{ form.responsable }}
-                                {% if form.responsable.errors %}
-                                <div class="text-danger small">{{ form.responsable.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Fila 5: Cargo y Activo -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="{{ form.cargo.id_for_label }}" class="form-label fw-bold">Cargo</label>
                                 {{ form.cargo }}
                                 {% if form.cargo.errors %}
                                 <div class="text-danger small">{{ form.cargo.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.activo.id_for_label }}" class="form-label fw-bold">Activo</label>
-                                {{ form.activo }}
-                                {% if form.activo.errors %}
-                                <div class="text-danger small">{{ form.activo.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Fila 6: Código Centro de Costo y Nombre Centro de Costo -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="{{ form.codigo_centro_costo.id_for_label }}"
                                     class="form-label fw-bold">Código Centro de Costo</label>
                                 {{ form.codigo_centro_costo }}
@@ -114,50 +163,15 @@
                                 <div class="text-danger small">{{ form.codigo_centro_costo.errors.0 }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="{{ form.centro_costo_punto.id_for_label }}"
-                                    class="form-label fw-bold">Nombre Centro de Costo</label>
+                                    class="form-label fw-bold">Nombre del Centro de Costo</label>
                                 {{ form.centro_costo_punto }}
                                 {% if form.centro_costo_punto.errors %}
                                 <div class="text-danger small">{{ form.centro_costo_punto.errors.0 }}</div>
                                 {% endif %}
                             </div>
-
-                            <!-- Fila 7: IMEI 1 e IMEI 2 -->
-                            <div class="col-md-6">
-                                <label for="{{ form.imei1.id_for_label }}" class="form-label fw-bold">IMEI 1</label>
-                                {{ form.imei1 }}
-                                {% if form.imei1.errors %}
-                                <div class="text-danger small">{{ form.imei1.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.imei2.id_for_label }}" class="form-label fw-bold">IMEI 2</label>
-                                {{ form.imei2 }}
-                                {% if form.imei2.errors %}
-                                <div class="text-danger small">{{ form.imei2.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Fila 8: S/N y MAC SUPERFLEX -->
-                            <div class="col-md-6">
-                                <label for="{{ form.sn.id_for_label }}" class="form-label fw-bold">S/N</label>
-                                {{ form.sn }}
-                                {% if form.sn.errors %}
-                                <div class="text-danger small">{{ form.sn.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.mac_superflex.id_for_label }}" class="form-label fw-bold">MAC
-                                    SUPERFLEX</label>
-                                {{ form.mac_superflex }}
-                                {% if form.mac_superflex.errors %}
-                                <div class="text-danger small">{{ form.mac_superflex.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Fila 9: Punto de Venta y Fecha de Salida de Bodega -->
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="{{ form.punto_venta.id_for_label }}" class="form-label fw-bold">Punto de
                                     Venta</label>
                                 {{ form.punto_venta }}
@@ -165,17 +179,25 @@
                                 <div class="text-danger small">{{ form.punto_venta.errors.0 }}</div>
                                 {% endif %}
                             </div>
+                        </div>
+
+                        <!-- Sección: Información Adicional -->
+                        <div class="section-header mb-3">
+                            <h5 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-info-circle me-2"></i>Información Adicional
+                            </h5>
+                        </div>
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label for="{{ form.fecha_salida_bodega.id_for_label }}"
                                     class="form-label fw-bold">Fecha de Salida de Bodega</label>
                                 {{ form.fecha_salida_bodega }}
+                                <small class="text-muted d-block">Se llena automáticamente al asignar</small>
                                 {% if form.fecha_salida_bodega.errors %}
                                 <div class="text-danger small">{{ form.fecha_salida_bodega.errors.0 }}</div>
                                 {% endif %}
                             </div>
-
-                            <!-- Observación -->
-                            <div class="col-12">
+                            <div class="col-md-12">
                                 <label for="{{ form.observacion.id_for_label }}"
                                     class="form-label fw-bold">Observación</label>
                                 {{ form.observacion }}
@@ -274,6 +296,69 @@
             actualizarMarcas();
         }
 
+        // Detección automática de operador basado en ICCID
+        const iccidInput = document.getElementById('id_iccid');
+        const operadorInput = document.getElementById('id_operador');
+
+        if (iccidInput && operadorInput) {
+            function detectarOperador(iccid) {
+                if (!iccid) return '';
+
+                iccid = iccid.trim();
+
+                // Tigo - verificar primero 89577 (más específico)
+                if (iccid.startsWith('89577')) {
+                    return 'Tigo';
+                }
+
+                // Claro - verificar 57101
+                if (iccid.startsWith('57101')) {
+                    return 'Claro';
+                }
+
+                // Movistar - verificar 8957 (más genérico, va al final)
+                if (iccid.startsWith('8957')) {
+                    return 'Movistar';
+                }
+
+                return '';
+            }
+
+            iccidInput.addEventListener('input', function () {
+                const operador = detectarOperador(this.value);
+                operadorInput.value = operador;
+            });
+
+            // Ejecutar al cargar si ya hay un valor
+            if (iccidInput.value) {
+                operadorInput.value = detectarOperador(iccidInput.value);
+            }
+        }
+
+        // Funcionalidad de Enter para pasar al siguiente input
+        const formInputs = document.querySelectorAll('input, select, textarea');
+        formInputs.forEach((input, index) => {
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+
+                    // Si es el último input, enviar el formulario
+                    if (index === formInputs.length - 1) {
+                        const form = this.closest('form');
+                        if (form) {
+                            form.submit();
+                        }
+                    } else {
+                        // Si no es el último, pasar al siguiente
+                        const nextInput = formInputs[index + 1];
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+                    }
+                }
+            });
+        });
+
         // Auto-resize observación
         const observacionInput = document.getElementById('{{ form.observacion.id_for_label }}');
         if (observacionInput) {
@@ -285,6 +370,24 @@
             observacionInput.addEventListener('input', resize);
             // Initial resize in case there is content
             setTimeout(resize, 100);
+        }
+
+        // Auto-completar fecha de salida si se asigna el activo
+        const documentoInput = document.getElementById('id_documento');
+        const nombresInput = document.getElementById('id_nombres_apellidos');
+        const fechaSalidaInput = document.getElementById('id_fecha_salida_bodega');
+
+        if (documentoInput && nombresInput && fechaSalidaInput) {
+            function verificarAsignacion() {
+                // Si hay documento y nombres, y no hay fecha de salida, llenarla con la fecha actual
+                if (documentoInput.value && nombresInput.value && !fechaSalidaInput.value) {
+                    const hoy = new Date().toISOString().split('T')[0];
+                    fechaSalidaInput.value = hoy;
+                }
+            }
+
+            documentoInput.addEventListener('blur', verificarAsignacion);
+            nombresInput.addEventListener('blur', verificarAsignacion);
         }
 
         // Validación
@@ -300,4 +403,19 @@
         })
     })
 </script>
+
+<style>
+    .section-header h5 {
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+
+    .section-header {
+        margin-top: 1.5rem;
+    }
+
+    .section-header:first-child {
+        margin-top: 0;
+    }
+</style>
 {% endblock %}
