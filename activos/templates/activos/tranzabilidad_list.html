@@ -1,50 +1,468 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Tranzabilidad{% endblock %}
+{% block title %}Trazabilidad{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">Tranzabilidad</h1>
-
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Activo</th>
-                    <th>Tipo</th>
-                    <th>Usuario</th>
-                    <th>Zona Origen</th>
-                    <th>Zona Destino</th>
-                    <th>Estado Anterior</th>
-                    <th>Estado Nuevo</th>
-                    <th>Fecha</th>
-                    <th>Descripción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for movimiento in movimientos %}
-                <tr>
-                    <td>{{ movimiento.id }}</td>
-                    <td>{{ movimiento.activo }}</td>
-                    <td>{{ movimiento.get_tipo_display }}</td>
-                    <td>{{ movimiento.usuario }}</td>
-                    <td>{{ movimiento.zona_origen|default:"-" }}</td>
-                    <td>{{ movimiento.zona_destino|default:"-" }}</td>
-                    <td>{{ movimiento.estado_anterior|default:"-" }}</td>
-                    <td>{{ movimiento.estado_nuevo|default:"-" }}</td>
-                    <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
-                    <td>{{ movimiento.descripcion|default:"-" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="10" class="text-center">No hay registros de tranzabilidad.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold mb-0 text-gray-800">
+            <i class="fas fa-history me-2"></i>Trazabilidad
+        </h1>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse"
+                data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </button>
+            <a href="{% url 'activos:admin_dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
     </div>
 
-    <a href="{% url 'activos:admin_dashboard' %}" class="btn btn-dark mt-3">Volver al Dashboard</a>
+    <!-- Filtros -->
+    <div class="collapse mb-4 {% if filtro_tipo or filtro_fecha_inicio or filtro_fecha_fin or filtro_usuario or filtro_activo %}show{% endif %}"
+        id="filterCollapse">
+        <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label for="tipo" class="form-label small fw-bold text-muted">Tipo de Acción</label>
+                        <select name="tipo" id="tipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            {% for codigo, nombre in tipos_accion %}
+                            <option value="{{ codigo }}" {% if filtro_tipo == codigo %}selected{% endif %}>{{ nombre }}
+
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="fecha_inicio" class="form-label small fw-bold text-muted">Fecha Inicio</label>
+                        <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio"
+                            value="{{ filtro_fecha_inicio }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="fecha_fin" class="form-label small fw-bold text-muted">Fecha Fin</label>
+                        <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin"
+                            value="{{ filtro_fecha_fin }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="usuario" class="form-label small fw-bold text-muted">Usuario</label>
+                        <select name="usuario" id="usuario" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            {% for user in usuarios %}
+                            <option value="{{ user.id }}" {% if filtro_usuario|add:"0" == user.id %}selected{% endif %}>{{
+                                user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="activo" class="form-label small fw-bold text-muted">Buscar Activo</label>
+                        <input type="text" class="form-control form-control-sm" id="activo" name="activo"
+                            placeholder="Serial, Item o Nombre..." value="{{ filtro_activo }}">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-search me-1"></i>Aplicar
+                            </button>
+                            <a href="{% url 'activos:tranzabilidad_list' %}"
+                                class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fas fa-times me-1"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 ps-4">Fecha</th>
+                            <th>Activo</th>
+                            <th>Tipo</th>
+                            <th>Usuario</th>
+                            <th>Detalles</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in movimientos %}
+                        <tr>
+                            <td class="ps-4" style="width: 130px;">
+                                <div class="d-flex align-items-center text-muted small">
+                                    <i class="far fa-clock me-1 text-primary opacity-50"></i>
+                                    <span class="fw-medium">{{ movimiento.fecha|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if movimiento.activo %}
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark small">{{ movimiento.activo.activo }}</span>
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        <i class="fas fa-barcode me-1 text-secondary opacity-50"></i>{{
+                                        movimiento.activo.serial|default:movimiento.activo.documento|default:"Sin ID" }}
+                                    </small>
+                                </div>
+                                {% else %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">
+                                    <i class="fas fa-trash-alt me-1"></i>Eliminado
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if movimiento.tipo == 'ingreso' %}
+                                <span
+                                    class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">
+                                    <i class="fas fa-plus-circle me-1"></i>Ingreso
+                                </span>
+                                {% elif movimiento.tipo == 'asignacion' %}
+                                <span
+                                    class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-2">
+                                    <i class="fas fa-user-check me-1"></i>Asignación
+                                </span>
+                                {% elif movimiento.tipo == 'eliminacion' %}
+                                <span
+                                    class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2">
+                                    <i class="fas fa-trash me-1"></i>Eliminación
+                                </span>
+                                {% elif movimiento.tipo == 'cambio_estado' %}
+                                <span
+                                    class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-2">
+                                    <i class="fas fa-exchange-alt me-1"></i>Estado
+                                </span>
+                                {% elif movimiento.tipo == 'actualizacion' %}
+                                <span
+                                    class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">
+                                    <i class="fas fa-edit me-1"></i>Actualización
+                                </span>
+                                {% elif movimiento.tipo == 'transferencia' %}
+                                <span
+                                    class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Transf.
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-dark border px-2">
+                                    {{ movimiento.get_tipo_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light text-primary fw-bold me-2 border"
+                                        style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                                        {{ movimiento.usuario.username|make_list|first|upper }}
+                                    </div>
+                                    <span class="text-dark small">{{ movimiento.usuario.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    {% if movimiento.tipo == 'cambio_estado' %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-secondary">{{ movimiento.estado_anterior|default:"-"
+                                            }}</span>
+                                        <i class="fas fa-arrow-right text-muted small"></i>
+                                        <span class="badge bg-success">{{ movimiento.estado_nuevo|default:"-" }}</span>
+                                    </div>
+                                    {% elif movimiento.tipo == 'transferencia' %}
+                                    <div class="d-flex flex-column text-muted" style="line-height:1.2;">
+                                        <span><span class="fw-bold">De:</span> {{ movimiento.zona_origen|default:"-"
+                                            }}</span>
+                                        <span><span class="fw-bold">A:</span> {{ movimiento.zona_destino|default:"-"
+                                            }}</span>
+                                    </div>
+                                    {% elif movimiento.tipo == 'asignacion' %}
+                                    <span class="text-dark"><i class="fas fa-map-marker-alt me-1 text-muted"></i>{{
+                                        movimiento.zona_destino|default:"-" }}</span>
+                                    {% elif movimiento.tipo == 'actualizacion' %}
+                                    <!-- Mostrar conteo de cambios si existen en historiales -->
+                                    {% for id, historial_list in historiales.items %}
+                                    {% if id == movimiento.id and historial_list %}
+                                    <span class="text-info fw-medium">
+                                        <i class="fas fa-list-ul me-1"></i>{{ historial_list.count }} campos modificados
+                                    </span>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% else %}
+                                    <span class="text-muted fst-italic">-</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-detalle"
+                            data-bs-toggle="modal"
+                            data-bs-target="#detalleModal"
+                            data-id="{{ movimiento.id }}"
+                            data-fecha="{{ movimiento.fecha|date:'d/m/Y H:i:s' }}"
+                            data-tipo="{{ movimiento.get_tipo_display }}"
+                            data-usuario="{{ movimiento.usuario.username }}"
+                            data-descripcion="{{ movimiento.descripcion|default:'Sin descripción' }}"
+                            {% if movimiento.activo %}
+                                data-activo-nombre="{{ movimiento.activo.activo }}"
+                                data-activo-serial="{{ movimiento.activo.serial|default:movimiento.activo.documento|default:'-' }}"
+                                data-activo-estado="{{ movimiento.activo.estado }}"
+                                data-activo-zona="{{ movimiento.activo.zona }}"
+                                data-activo-responsable="{{ movimiento.activo.responsable|default:'-' }}"
+                                data-activo-marca="{{ movimiento.activo.marca|default:'-' }}"
+                                data-activo-categoria="{{ movimiento.activo.categoria|default:'-' }}"
+                            {% else %}
+                                data-activo-nombre="Activo Eliminado"
+                                data-activo-serial="-"
+                            {% endif %}
+                        >
+                            <i class="fas fa-eye me-1"></i>Ver
+                        </button>
+
+
+                                <!-- Contenedor oculto con los cambios históricos para este movimiento -->
+                                <div id="historial-data-{{ movimiento.id }}" class="d-none">
+                                    {% for id, historial_list in historiales.items %}
+                                    {% if id == movimiento.id %}
+                                    {% for h in historial_list %}
+                                    <div class="row border-bottom py-2">
+                                        <div class="col-4 fw-bold text-muted">{{ h.campo_cambiado|title }}</div>
+                                        <div class="col-4 text-danger text-break">{{
+                                            h.valor_anterior|default:"<i>Vacío</i>" }}</div>
+                                        <div class="col-4 text-success text-break">{{
+                                            h.valor_nuevo|default:"<i>Vacío</i>" }}</div>
+                                    </div>
+                                    {% endfor %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="bg-light rounded-circle p-4 mb-3">
+                                        <i class="fas fa-search fa-2x text-muted opacity-50"></i>
+                                    </div>
+                                    <h5 class="fw-bold text-dark">No se encontraron resultados</h5>
+                                    <p class="mb-0 small">Intenta ajustar los filtros de búsqueda.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+            <div class="card-footer bg-white border-top-0 py-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ page_obj.previous_page_number }}&tipo={{ filtro_tipo }}&fecha_inicio={{ filtro_fecha_inicio }}&fecha_fin={{ filtro_fecha_fin }}&usuario={{ filtro_usuario }}&activo={{ filtro_activo }}"
+                                aria-label="Anterior">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link text-dark fw-bold">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ page_obj.next_page_number }}&tipo={{ filtro_tipo }}&fecha_inicio={{ filtro_fecha_inicio }}&fecha_fin={{ filtro_fecha_fin }}&usuario={{ filtro_usuario }}&activo={{ filtro_activo }}"
+                                aria-label="Siguiente">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
+
+<!-- Modal de Detalles -->
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="detalleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark" id="detalleModalLabel">
+                    <i class="fas fa-info-circle me-2 text-primary"></i>Detalles del Movimiento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <!-- Columna Izquierda: Info Activo -->
+                    <div class="col-md-5 border-end">
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">Información del Activo</h6>
+                        <div class="mb-3">
+                            <label class="small text-muted d-block">Nombre/Activo</label>
+                            <span class="fw-bold fs-5" id="modal-activo-nombre">-</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-muted d-block">Serial / Documento</label>
+                            <span class="fw-medium text-dark" id="modal-activo-serial">-</span>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="small text-muted d-block">Marca</label>
+                                <span class="fw-medium" id="modal-activo-marca">-</span>
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted d-block">Categoría</label>
+                                <span class="fw-medium" id="modal-activo-categoria">-</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <span class="badge bg-secondary" id="modal-activo-estado">Estado</span>
+                            <span class="badge bg-light text-dark border ms-1" id="modal-activo-zona">Zona</span>
+                        </div>
+                        <div>
+                            <label class="small text-muted d-block">Responsable Actual</label>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white small me-2"
+                                    style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user" style="font-size: 0.7rem;"></i>
+                                </div>
+                                <span class="fw-medium" id="modal-activo-responsable">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Info Movimiento -->
+                    <div class="col-md-7">
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">Detalles de la Acción</h6>
+
+                        <div class="d-flex justify-content-between align-items-start mb-3 bg-light p-3 rounded">
+                            <div>
+                                <label class="small text-muted d-block">Tipo de Acción</label>
+                                <span class="fw-bold text-primary" id="modal-tipo">-</span>
+                            </div>
+                            <div class="text-end">
+                                <label class="small text-muted d-block">Fecha y Hora</label>
+                                <span class="fw-bold text-dark" id="modal-fecha">-</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="small text-muted d-block mb-1">Realizado por</label>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-dark text-white fw-bold me-2"
+                                    style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user-shield nav-icon"></i>
+                                </div>
+                                <span class="fw-bold text-dark" id="modal-usuario">-</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="small text-muted d-block mb-1">Descripción / Notas</label>
+                            <p class="text-secondary bg-white border rounded p-2 mb-0" id="modal-descripcion"
+                                style="font-size: 0.9rem;">-</p>
+                        </div>
+
+                        <!-- Sección de Cambios (Dinámica) -->
+                        <div id="modal-changes-section" class="d-none">
+                            <h6 class="text-uppercase text-muted fw-bold small mb-2 border-bottom pb-2">
+                                <i class="fas fa-exchange-alt me-1"></i>Cambios Realizados
+                            </h6>
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                <div class="container-fluid px-0">
+                                    <div class="row bg-light py-1 fw-bold small text-muted border-bottom mx-0">
+                                        <div class="col-4">Campo</div>
+                                        <div class="col-4">Anterior</div>
+                                        <div class="col-4">Nuevo</div>
+                                    </div>
+                                    <div id="modal-changes-content">
+                                        <!-- Javascript insertará filas aquí -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var detalleModal = document.getElementById('detalleModal');
+        detalleModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Botón que activó el modal
+
+            // Extraer info de atributos data-*
+            var id = button.getAttribute('data-id');
+            var fecha = button.getAttribute('data-fecha');
+            var tipo = button.getAttribute('data-tipo');
+            var usuario = button.getAttribute('data-usuario');
+            var descripcion = button.getAttribute('data-descripcion');
+
+            var activoNombre = button.getAttribute('data-activo-nombre');
+            var activoSerial = button.getAttribute('data-activo-serial');
+            var activoEstado = button.getAttribute('data-activo-estado');
+            var activoZona = button.getAttribute('data-activo-zona');
+            var activoResponsable = button.getAttribute('data-activo-responsable');
+            var activoMarca = button.getAttribute('data-activo-marca');
+            var activoCategoria = button.getAttribute('data-activo-categoria');
+
+            // Actualizar contenido del modal
+            document.getElementById('modal-fecha').textContent = fecha;
+            document.getElementById('modal-tipo').textContent = tipo;
+            document.getElementById('modal-usuario').textContent = usuario;
+            document.getElementById('modal-descripcion').textContent = descripcion;
+
+            document.getElementById('modal-activo-nombre').textContent = activoNombre;
+            document.getElementById('modal-activo-serial').textContent = activoSerial;
+            document.getElementById('modal-activo-estado').textContent = activoEstado;
+            document.getElementById('modal-activo-zona').textContent = activoZona;
+            document.getElementById('modal-activo-responsable').textContent = activoResponsable;
+            document.getElementById('modal-activo-marca').textContent = activoMarca;
+            document.getElementById('modal-activo-categoria').textContent = activoCategoria;
+
+            // Manejar historial de cambios
+            var historialData = document.getElementById('historial-data-' + id);
+            var changesSection = document.getElementById('modal-changes-section');
+            var changesContent = document.getElementById('modal-changes-content');
+
+            changesContent.innerHTML = ''; // Limpiar anterior
+
+            if (historialData && historialData.children.length > 0) {
+                changesSection.classList.remove('d-none');
+                // Copiar el contenido HTML pre-renderizado al modal
+                Array.from(historialData.children).forEach(function (child) {
+                    changesContent.appendChild(child.cloneNode(true));
+                });
+            } else {
+                changesSection.classList.add('d-none');
+            }
+        });
+    });
+</script>
 {% endblock %}

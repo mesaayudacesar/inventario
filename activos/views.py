@@ -8,7 +8,10 @@ import csv
 import json
 from openpyxl import Workbook
 from django.db import models
+from django.db.models import Q
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from datetime import timedelta
 from .models import Activo, Tranzabilidad, Historial, Zona, Categoria, Marca
 from .forms import ActivoForm
 
@@ -246,7 +249,21 @@ class ActivoCreateView(LoginRequiredMixin, CreateView):
             marcas_por_categoria[cat_id].append({'id': marca.id, 'nombre': marca.nombre})
         context['marcas_por_categoria_json'] = json.dumps(marcas_por_categoria)
         
+        context['marcas_por_categoria_json'] = json.dumps(marcas_por_categoria)
+        
         return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        Tranzabilidad.objects.create(
+            activo=self.object,
+            tipo='ingreso',
+            usuario=self.request.user,
+            zona_destino=self.object.zona,
+            estado_nuevo=self.object.estado,
+            descripcion='Ingreso inicial del activo al sistema'
+        )
+        return response
 
 class ActivoDetailView(LoginRequiredMixin, DetailView):
     model = Activo
@@ -281,7 +298,93 @@ class ActivoUpdateView(LoginRequiredMixin, UpdateView):
             marcas_por_categoria[cat_id].append({'id': marca.id, 'nombre': marca.nombre})
         context['marcas_por_categoria_json'] = json.dumps(marcas_por_categoria)
         
+        context['marcas_por_categoria_json'] = json.dumps(marcas_por_categoria)
+        
         return context
+
+    def form_valid(self, form):
+        # Obtener estado anterior de la base de datos
+        activo_anterior = Activo.objects.get(pk=self.object.pk)
+        
+        response = super().form_valid(form)
+        
+        # Determinar tipo de movimiento
+        tipo = 'actualizacion'
+        cambios = []
+        
+        # Campos a ignorar o tratar especial
+        ignored_fields = ['fecha_actualizacion', 'usuario_actualizacion'] 
+        
+        for field in form.changed_data:
+            if field in ignored_fields:
+                continue
+                
+            old_value = getattr(activo_anterior, field)
+            new_value = form.cleaned_data.get(field)
+            
+            # String representation for values
+            if hasattr(old_value, 'nombre'): # For ForeignKey like Categoria/Marca
+                old_str = old_value.nombre
+            else:
+                old_str = str(old_value) if old_value is not None else '-'
+                
+            if hasattr(new_value, 'nombre'):
+                new_str = new_value.nombre
+            else:
+                new_str = str(new_value) if new_value is not None else '-'
+            
+            cambios.append(f"{field}: {old_str} -> {new_str}")
+            
+        descripcion = "Actualización: " + ", ".join(cambios) if cambios else "Actualización sin cambios detectados"
+        
+        if activo_anterior.estado != self.object.estado:
+            tipo = 'cambio_estado'
+            # Priorizar cambio de estado en la descripción pero mantener historial de otros campos
+            descripcion = f'Cambio de estado: {activo_anterior.estado} -> {self.object.estado}. ' + descripcion
+            
+        tranzabilidad = Tranzabilidad.objects.create(
+            activo=self.object,
+            tipo=tipo,
+            usuario=self.request.user,
+            zona_origen=activo_anterior.zona,
+            zona_destino=self.object.zona,
+            estado_anterior=activo_anterior.estado,
+            estado_nuevo=self.object.estado,
+            descripcion=descripcion
+        )
+
+        # Si es una actualización normal (no cambio de estado), registrar campos cambiados
+        if tipo == 'actualizacion' and form.changed_data:
+            cambios = []
+            for field in form.changed_data:
+                # Omitir campos que no son relevantes para el historial visual o son internos
+                if field in ['fecha_modificacion', 'usuario_modificacion']: 
+                    continue
+                
+                try:
+                    valor_ante = getattr(activo_anterior, field)
+                    valor_nuev = form.cleaned_data.get(field)
+                    
+                    # Manejar campos ForeignKey (mostrar string representation)
+                    if hasattr(valor_ante, 'nombre'):
+                        valor_ante = valor_ante.nombre
+                    if hasattr(valor_nuev, 'nombre'):
+                        valor_nuev = valor_nuev.nombre
+                        
+                    # Manejar None/Empty
+                    valor_ante = str(valor_ante) if valor_ante is not None else "Vacío"
+                    valor_nuev = str(valor_nuev) if valor_nuev is not None else "Vacío"
+                    
+                    verbose_name = self.model._meta.get_field(field).verbose_name
+                    cambios.append(f"{verbose_name}: {valor_ante} ➝ {valor_nuev}")
+                except Exception as e:
+                    continue
+            
+            if cambios:
+                # Actualizar la descripción con los detalles
+                tranzabilidad.descripcion = "Actualización de datos:\n" + "\n".join(cambios)
+                tranzabilidad.save()
+        return response
 
 class ActivoAsignarView(LoginRequiredMixin, UpdateView):
     model = Activo
@@ -316,6 +419,17 @@ class ActivoAsignarView(LoginRequiredMixin, UpdateView):
         
         return context
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        Tranzabilidad.objects.create(
+            activo=self.object,
+            tipo='asignacion',
+            usuario=self.request.user,
+            zona_destino=self.object.zona,
+            descripcion=f'Asignado a: {self.object.responsable}'
+        )
+        return response
+
 class ActivoDeleteView(LoginRequiredMixin, DeleteView):
     model = Activo
     template_name = 'activos/activo_confirm_delete.html'
@@ -326,6 +440,18 @@ class ActivoDeleteView(LoginRequiredMixin, DeleteView):
             messages.error(request, 'No tienes permisos para eliminar activos.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        # Registrar trazabilidad antes de eliminar
+        Tranzabilidad.objects.create(
+            activo=self.object,
+            tipo='eliminacion',
+            usuario=self.request.user,
+            descripcion=f'Activo eliminado. Serial: {self.object.sn}, Documento: {self.object.documento}'
+        )
+        self.object.delete()
+        return HttpResponseRedirect(success_url)
 
 
 @login_required
@@ -346,6 +472,16 @@ def eliminar_multiples_activos(request):
         # Eliminar los activos
         activos_eliminados = Activo.objects.filter(pk__in=activos_ids)
         cantidad = activos_eliminados.count()
+        
+        # Registrar trazabilidad para cada activo antes de eliminar
+        for activo in activos_eliminados:
+            Tranzabilidad.objects.create(
+                activo=activo,
+                tipo='eliminacion',
+                usuario=request.user,
+                descripcion=f'Activo eliminado (Masivo). Serial: {activo.sn}, Documento: {activo.documento}'
+            )
+
         activos_eliminados.delete()
         
         messages.success(request, f'Se eliminaron {cantidad} activo(s) exitosamente.')
@@ -374,12 +510,79 @@ class TranzabilidadListView(LoginRequiredMixin, ListView):
     model = Tranzabilidad
     template_name = 'activos/tranzabilidad_list.html'
     context_object_name = 'movimientos'
+    paginate_by = 20
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.rol not in ['admin', 'logistica', 'asignador']:
             messages.error(request, 'No tienes permisos para ver tranzabilidad.')
             return redirect('activos:home')
         return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.select_related('activo', 'usuario', 'activo__categoria', 'activo__marca')
+        
+        # Filtros
+        tipo = self.request.GET.get('tipo')
+        if tipo:
+            queryset = queryset.filter(tipo=tipo)
+        
+        fecha_inicio = self.request.GET.get('fecha_inicio')
+        if fecha_inicio:
+            queryset = queryset.filter(fecha__date__gte=fecha_inicio)
+        
+        fecha_fin = self.request.GET.get('fecha_fin')
+        if fecha_fin:
+            queryset = queryset.filter(fecha__date__lte=fecha_fin)
+        
+        usuario = self.request.GET.get('usuario')
+        if usuario:
+            queryset = queryset.filter(usuario_id=usuario)
+        
+        activo_query = self.request.GET.get('activo')
+        if activo_query:
+            queryset = queryset.filter(
+                Q(activo__activo__icontains=activo_query) |
+                Q(activo__sn__icontains=activo_query) |
+                Q(activo__item__icontains=activo_query)
+            )
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Para los filtros
+        context['tipos_accion'] = Tranzabilidad.TIPO_CHOICES
+        context['usuarios'] = get_user_model().objects.filter(
+            id__in=Tranzabilidad.objects.values_list('usuario_id', flat=True).distinct()
+        )
+        
+        # Mantener valores de filtros
+        context['filtro_tipo'] = self.request.GET.get('tipo', '')
+        context['filtro_fecha_inicio'] = self.request.GET.get('fecha_inicio', '')
+        context['filtro_fecha_fin'] = self.request.GET.get('fecha_fin', '')
+        context['filtro_usuario'] = self.request.GET.get('usuario', '')
+        context['filtro_activo'] = self.request.GET.get('activo', '')
+        
+        # Historial de cambios por movimiento (para el modal)
+        # Optimizacion: Evitar consultas N+1 cargando historiales relevantes en memoria o filtrando
+        # Dado que es paginado, podemos hacer la consulta para los items de la pagina actual
+        movimientos_page = context['movimientos'] # Esto es la page_obj o lista paginada en ListView
+        
+        historiales = {}
+        for mov in movimientos_page:
+            if mov.activo and mov.tipo in ['actualizacion', 'cambio_estado']:
+                # Buscamos historiales cercanos a la fecha del movimiento
+                # Usamos un rango pequeño de tiempo porque el historial se crea en la misma transacción/flujo
+                historiales[mov.id] = Historial.objects.filter(
+                    activo=mov.activo,
+                    fecha__range=[mov.fecha - timedelta(seconds=2), mov.fecha + timedelta(seconds=2)]
+                ).order_by('fecha')
+        
+        context['historiales'] = historiales
+        
+        return context
 
 # Tranzabilidad registration
 class RegistrarTranzabilidadView(LoginRequiredMixin, CreateView):

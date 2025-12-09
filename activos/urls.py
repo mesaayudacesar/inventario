@@ -19,7 +19,7 @@ urlpatterns = [
     path('<int:pk>/historial/', views.historial_activo, name='historial_activo'),
     path('<int:pk>/tranzabilidad/', views.RegistrarTranzabilidadView.as_view(), name='registrar-tranzabilidad'),
 
-    path('tranzabilidad/', views.TranzabilidadListView.as_view(), name='tranzabilidad'),
+    path('tranzabilidad/', views.TranzabilidadListView.as_view(), name='tranzabilidad_list'),
     path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
 
     # Zonas

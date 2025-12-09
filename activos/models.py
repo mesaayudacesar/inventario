@@ -114,9 +114,12 @@ class Tranzabilidad(models.Model):
         ('salida', 'Salida'),
         ('transferencia', 'Transferencia'),
         ('cambio_estado', 'Cambio de Estado'),
+        ('asignacion', 'Asignación'),
+        ('actualizacion', 'Actualización'),
+        ('eliminacion', 'Eliminación'),
     ]
 
-    activo = models.ForeignKey(Activo, on_delete=models.CASCADE, verbose_name="Activo")
+    activo = models.ForeignKey(Activo, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Activo")
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo de Tranzabilidad")
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Usuario")
     zona_origen = models.CharField(max_length=100, blank=True, null=True, verbose_name="Zona Origen")

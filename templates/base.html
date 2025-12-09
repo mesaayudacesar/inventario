@@ -45,7 +45,7 @@
                 class="{% if 'user' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fa-solid fa-users"></i> Usuarios
             </a>
-            <a href="{% url 'activos:tranzabilidad' %}"
+            <a href="{% url 'activos:tranzabilidad_list' %}"
                 class="{% if 'tranzabilidad' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fa-solid fa-clock-rotate-left"></i> Tranzabilidad
             </a>
@@ -64,7 +64,7 @@
                 class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
                 <i class="fa-solid fa-mobile-screen-button"></i> Activos
             </a>
-            <a href="{% url 'activos:tranzabilidad' %}"
+            <a href="{% url 'activos:tranzabilidad_list' %}"
                 class="{% if 'tranzabilidad' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fa-solid fa-clock-rotate-left"></i> Tranzabilidad
             </a>
