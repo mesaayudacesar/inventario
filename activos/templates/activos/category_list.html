@@ -48,9 +48,8 @@
                                 title="Editar">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="{% url 'activos:categoria_delete' categoria.pk %}"
-                                class="btn btn-sm btn-outline-danger" title="Eliminar"
-                                onclick="return confirm('¿Eliminar categoría {{ categoria.nombre }}? Esto eliminará también todas sus marcas.')">
+                            <a href="#" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                onclick="confirmarAccion(event, '¿Eliminar categoría?', 'Se eliminará la categoría {{ categoria.nombre }} y TODAS sus marcas asociadas.', 'error', function(){ window.location.href='{% url 'activos:categoria_delete' categoria.pk %}'; })">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </td>

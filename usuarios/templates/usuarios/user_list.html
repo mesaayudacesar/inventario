@@ -10,6 +10,13 @@
     </a>
 </div>
 
+<!-- Token CSRF para peticiones POST vía JS -->
+<div class="d-none">
+    <form id="csrf-container">
+        {% csrf_token %}
+    </form>
+</div>
+
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -41,15 +48,38 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <a href="{% url 'usuarios:user_update' user.pk %}"
-                                class="btn btn-sm btn-outline-warning me-1 modal-trigger" data-title="Editar Usuario"
-                                title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="{% url 'usuarios:user_reset_password' user.pk %}"
-                                class="btn btn-sm btn-outline-info" title="Resetear Contraseña">
-                                <i class="fas fa-key"></i>
-                            </a>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'usuarios:user_update' user.pk %}"
+                                    class="btn btn-outline-warning modal-trigger" data-title="Editar Usuario"
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'usuarios:user_reset_password' user.pk %}" class="btn btn-outline-info"
+                                    title="Resetear Contraseña">
+                                    <i class="fas fa-key"></i>
+                                </a>
+                                {% if user != request.user %}
+                                <a href="#" class="btn btn-outline-{{ user.is_active|yesno:'secondary,success' }}"
+                                    title="{{ user.is_active|yesno:'Inactivar,Activar' }}"
+                                    onclick="confirmarAccion(event, '¿{{ user.is_active|yesno:'Inactivar,Activar' }} usuario?', 'El usuario {{ user.username }} {{ user.is_active|yesno:'perderá,recuperará' }} el acceso al sistema.', 'question', function(){ window.location.href='{% url 'usuarios:user_toggle_active' user.pk %}'; })">
+                                    <i class="fas fa-{{ user.is_active|yesno:'ban,check' }}"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-danger" title="Eliminar" onclick="confirmarAccion(event, '¿Eliminar usuario?', 'Esta acción eliminará permanentemente al usuario {{ user.username }}. No se puede deshacer.', 'warning', function(){ 
+                                        const form = document.createElement('form');
+                                        form.method = 'POST';
+                                        form.action = '{% url 'usuarios:user_delete' user.pk %}';
+                                        const csrf = document.createElement('input');
+                                        csrf.type = 'hidden';
+                                        csrf.name = 'csrfmiddlewaretoken';
+                                        csrf.value = document.querySelector('#csrf-container [name=csrfmiddlewaretoken]').value;
+                                        form.appendChild(csrf);
+                                        document.body.appendChild(form);
+                                        form.submit();
+                                   })">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}

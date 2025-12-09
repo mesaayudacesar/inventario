@@ -80,3 +80,44 @@ def user_reset_password(request, pk):
         messages.success(request, 'Contraseña reseteada exitosamente.')
         return redirect('usuarios:user_list')
     return render(request, 'usuarios/reset_password.html', {'user': user})
+
+@login_required
+def user_toggle_active(request, pk):
+    if request.user.rol != 'admin':
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('activos:home')
+    
+    user = get_object_or_404(Usuario, pk=pk)
+    
+    # Evitar desactivarse a uno mismo
+    if user == request.user:
+        messages.error(request, 'No puedes desactivar tu propio usuario.')
+        return redirect('usuarios:user_list')
+        
+    user.is_active = not user.is_active
+    user.save()
+    
+    estado = "activado" if user.is_active else "desactivado"
+    messages.success(request, f'Usuario {user.username} {estado} exitosamente.')
+    return redirect('usuarios:user_list')
+
+@login_required
+def user_delete(request, pk):
+    if request.user.rol != 'admin':
+        messages.error(request, 'No tienes permisos para eliminar usuarios.')
+        return redirect('activos:home')
+    
+    user = get_object_or_404(Usuario, pk=pk)
+    
+    # Evitar eliminarse a uno mismo
+    if user == request.user:
+        messages.error(request, 'No puedes eliminar tu propio usuario.')
+        return redirect('usuarios:user_list')
+        
+    if request.method == 'POST':
+        username = user.username
+        user.delete()
+        messages.success(request, f'Usuario {username} eliminado exitosamente.')
+        return redirect('usuarios:user_list')
+        
+    return redirect('usuarios:user_list')

@@ -128,3 +128,9 @@ LOGIN_URL = 'usuarios:login'
 
 # Modelo de usuario personalizado
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# Backend de autenticación personalizado (Case-Insensitive)
+AUTHENTICATION_BACKENDS = [
+    'usuarios.backends.CaseInsensitiveModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

@@ -282,14 +282,30 @@
 
                 const count = checked.length;
                 const message = count === 1 ? '¿Estás seguro de eliminar este activo?' : `¿Estás seguro de eliminar ${count} activos?`;
+                const subMessage = "Esta acción no se puede deshacer.";
 
-                if (confirm(message)) {
-                    const ids = checked.map(cb => cb.dataset.pk);
-                    if (count === 1) {
-                        // Crear formulario dinámico para POST
+                Swal.fire({
+                    title: message,
+                    text: subMessage,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const ids = checked.map(cb => cb.dataset.pk);
+
                         const form = document.createElement('form');
                         form.method = 'POST';
-                        form.action = `/activos/${ids[0]}/eliminar/`;
+
+                        // Determinar URL de acción
+                        if (count === 1) {
+                            form.action = `/activos/${ids[0]}/eliminar/`;
+                        } else {
+                            form.action = "{% url 'activos:activo_delete_multiple' %}";
+                        }
 
                         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                         const csrfInput = document.createElement('input');
@@ -298,32 +314,21 @@
                         csrfInput.value = csrfToken;
                         form.appendChild(csrfInput);
 
-                        document.body.appendChild(form);
-                        form.submit();
-                    } else {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = "{% url 'activos:activo_delete_multiple' %}";
-
-                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = 'csrfmiddlewaretoken';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
-
-                        ids.forEach(id => {
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = 'activos_ids';
-                            hiddenInput.value = id;
-                            form.appendChild(hiddenInput);
-                        });
+                        // Si es multiple, añadir IDs
+                        if (count > 1) {
+                            ids.forEach(id => {
+                                const hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = 'activos_ids';
+                                hiddenInput.value = id;
+                                form.appendChild(hiddenInput);
+                            });
+                        }
 
                         document.body.appendChild(form);
                         form.submit();
                     }
-                }
+                });
             });
         }
     });
