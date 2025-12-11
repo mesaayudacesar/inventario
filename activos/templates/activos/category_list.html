@@ -49,7 +49,8 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a href="#" class="btn btn-sm btn-outline-danger" title="Eliminar"
-                                onclick="confirmarAccion(event, '¿Eliminar categoría?', 'Se eliminará la categoría {{ categoria.nombre }} y TODAS sus marcas asociadas.', 'error', function(){ window.location.href='{% url 'activos:categoria_delete' categoria.pk %}'; })">
+                                data-url="{% url 'activos:categoria_delete' categoria.pk %}"
+                                onclick="const url = this.getAttribute('data-url'); confirmarAccion(event, '¿Eliminar categoría?', 'Se eliminará la categoría {{ categoria.nombre|escapejs }} y TODAS sus marcas asociadas.', 'error', function(){ window.location.href = url; })">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </td>

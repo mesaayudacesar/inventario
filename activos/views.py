@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, DeleteView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 import csv
 import json
 from openpyxl import Workbook
@@ -12,8 +12,10 @@ from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from datetime import timedelta
+from django.utils import timezone
 from .models import Activo, Tranzabilidad, Historial, Zona, Categoria, Marca
-from .forms import ActivoForm, CategoriaForm
+from .forms import ActivoForm, CategoriaForm, ImportarActivosForm
+import openpyxl
 
 @login_required
 def dashboard_redirect(request):
@@ -148,6 +150,7 @@ class ActivoListView(LoginRequiredMixin, ListView):
     model = Activo
     template_name = 'activos/home.html'
     context_object_name = 'activos'
+    paginate_by = 20
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -261,9 +264,265 @@ def exportar_excel(request):
         ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=inventario_activos.xlsx'
+    fecha_hoy = timezone.now().strftime('%d-%m-%Y')
+    response['Content-Disposition'] = f'attachment; filename=inventario_activos_{fecha_hoy}.xlsx'
     wb.save(response)
     return response
+
+@login_required
+def descargar_plantilla(request):
+    if request.user.rol not in ['admin', 'logistica']:
+        messages.error(request, 'No tienes permisos para descargar plantillas.')
+        return redirect('activos:home')
+
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plantilla Importación"
+
+    # Definir estilos
+    header_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+
+    # Headers (Mismos que en exportar_excel)
+    headers = ['ITEM', 'DOCUMENTO', 'NOMBRES Y APELLIDOS', 'IMEI 1', 'IMEI 2', 'S/N', 
+               'ICCID', 'OPERADOR', 'MAC SUPERFLEX', 'MARCA', 'ACTIVO', 'CARGO', 'ESTADO', 
+               'FECHA CONFIRMACIÓN', 'RESPONSABLE', 'IDENTIFICACIÓN', 'ZONA', 'CATEGORÍA', 
+               'OBSERVACIÓN', 'PUNTO DE VENTA', 'CÓDIGO CENTRO COSTO', 'CENTRO COSTO PUNTO', 
+               'FECHA SALIDA BODEGA']
+    
+    ws.append(headers)
+    
+    # Aplicar estilos a encabezados
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+        cell.border = border
+
+    # Ajustar ancho de columnas sugerido
+    for col_num, column_title in enumerate(headers, 1):
+        column_letter = openpyxl.utils.get_column_letter(col_num)
+        ws.column_dimensions[column_letter].width = 20
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=plantilla_importacion_activos.xlsx'
+    wb.save(response)
+    return response
+
+@login_required
+def importar_activos(request):
+    if request.user.rol not in ['admin', 'logistica']:
+        messages.error(request, 'No tienes permisos para importar activos.')
+        return redirect('activos:home')
+
+    if request.method == 'POST':
+        form = ImportarActivosForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES['archivo_excel']
+            
+            try:
+                wb = openpyxl.load_workbook(excel_file)
+                ws = wb.active
+                
+                importados = 0
+                omitidos = 0
+                errores = 0
+                errores_list = []
+                
+                # Helper para convertir valores sin notación científica
+                def safe_str(val):
+                    if val is None:
+                        return None
+                    if isinstance(val, (int, float)):
+                        return '{:.0f}'.format(val)
+                    return str(val).strip()
+
+                # Iterar filas, saltando encabezado
+                for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                    try:
+                        # 0:ITEM, 1:DOC, 2:NOMBRES, 3:IMEI1, 4:IMEI2, 5:SN, 6:ICCID, 7:OPERADOR, 8:MAC, 9:MARCA, 10:ACTIVO
+                        
+                        sn = safe_str(row[5])
+                        
+                        if not sn:
+                            # Sin serial no procesamos
+                            # errores += 1
+                            # errores_list.append(f"Fila {row_idx}: No tiene S/N.")
+                            continue
+                            
+                        # Validación de existencia (Case Insensitive)
+                        if Activo.objects.filter(sn__iexact=sn).exists():
+                            omitidos += 1
+                            continue
+                        
+                        # Leer datos clave para validación
+                        zona_txt = str(row[16]).strip() if row[16] else "Valledupar"
+                        categoria_nombre = str(row[17]).strip() if row[17] else None
+                        marca_nombre = str(row[9]).strip() if row[9] else None
+                        
+                        # Validación: Zona
+                        if not Zona.objects.filter(nombre__iexact=zona_txt).exists():
+                            errores += 1
+                            errores_list.append(f"Fila {row_idx} (S/N {sn}): Zona '{zona_txt}' no existe.")
+                            continue
+                            
+                        # Validación: Categoría
+                        categoria_obj = None
+                        if categoria_nombre:
+                            categoria_obj = Categoria.objects.filter(nombre__iexact=categoria_nombre).first()
+                            
+                        if not categoria_obj:
+                            errores += 1
+                            errores_list.append(f"Fila {row_idx} (S/N {sn}): Categoría '{categoria_nombre}' no existe.")
+                            continue
+
+                        # Validación: Marca
+                        marca_obj = None
+                        if marca_nombre:
+                            if categoria_obj:
+                                # Buscar marca que pertenezca a la categoría
+                                marca_obj = Marca.objects.filter(nombre__iexact=marca_nombre, categoria=categoria_obj).first()
+                                if not marca_obj:
+                                     # Intentar buscar solo por nombre para dar mejor feedback
+                                     marca_existe = Marca.objects.filter(nombre__iexact=marca_nombre).exists()
+                                     if marca_existe:
+                                         errores += 1
+                                         errores_list.append(f"Fila {row_idx} (S/N {sn}): La marca '{marca_nombre}' no pertenece a la categoría '{categoria_nombre}'.")
+                                         continue
+                                     else:
+                                         errores += 1
+                                         errores_list.append(f"Fila {row_idx} (S/N {sn}): Marca '{marca_nombre}' no existe.")
+                                         continue
+                            else:
+                                # Should not happen due to prev check, but safety fallback
+                                marca_obj = Marca.objects.filter(nombre__iexact=marca_nombre).first()
+                        
+                        if not marca_obj:
+                            errores += 1
+                            errores_list.append(f"Fila {row_idx} (S/N {sn}): Marca '{marca_nombre}' es obligatoria o no existe.")
+                            continue
+
+                        # Preparar resto de datos
+                        documento = safe_str(row[1])
+                        nombres = str(row[2]).strip() if row[2] else None
+                        imei1 = safe_str(row[3])
+                        imei2 = safe_str(row[4])
+                        iccid = safe_str(row[6])
+                        operador = str(row[7]).strip() if row[7] else None
+                        mac = safe_str(row[8])
+                        nombre_activo = str(row[10]).strip() if row[10] else None
+                        cargo = str(row[11]).strip() if row[11] else "vendedor ambulante"
+                        estado = str(row[12]).strip() if row[12] else "activo confirmado"
+                        
+                        responsable = str(row[14]).strip() if row[14] else None
+                        identificacion = safe_str(row[15])
+                        observacion = str(row[18]).strip() if row[18] else "Importado masivamente"
+                        punto_venta = str(row[19]).strip() if row[19] else None
+                        codigo_centro = safe_str(row[20])
+                        centro_punto = str(row[21]).strip() if row[21] else None
+                        
+                        # Crear activo
+                        nuevo_activo = Activo(
+                            documento=documento,
+                            nombres_apellidos=nombres,
+                            imei1=imei1,
+                            imei2=imei2,
+                            sn=sn,
+                            iccid=iccid,
+                            operador=operador,
+                            mac_superflex=mac,
+                            marca=marca_obj,
+                            activo=nombre_activo,
+                            cargo=cargo,
+                            estado=estado,
+                            responsable=responsable,
+                            identificacion=identificacion,
+                            zona=zona_txt,
+                            categoria=categoria_obj,
+                            observacion=observacion,
+                            punto_venta=punto_venta,
+                            codigo_centro_costo=codigo_centro,
+                            centro_costo_punto=centro_punto
+                        )
+                        nuevo_activo.save()
+                        
+                        # Registrar trazabilidad
+                        Tranzabilidad.objects.create(
+                            activo=nuevo_activo,
+                            tipo='ingreso',
+                            usuario=request.user,
+                            zona_destino=zona_txt,
+                            descripcion='Importación masiva desde Excel'
+                        )
+                        
+                        importados += 1
+                        
+                    except Exception as e:
+                        print(f"Error en fila {row_idx}: {e}")
+                        errores += 1
+                        errores_list.append(f"Fila {row_idx}: Error inesperado - {str(e)}")
+                
+                # Construir mensaje final
+                icono = 'success'
+                titulo = 'Proceso Finalizado'
+                
+                msg = f'<br>Importados: {importados}<br>Omitidos (Duplicados): {omitidos}'
+                
+                if errores > 0:
+                    icono = 'warning'
+                    titulo = 'Importación con Observaciones'
+                    detalles_error = "<br>".join(errores_list[:5]) # Mostrar primeros 5
+                    if len(errores_list) > 5:
+                        detalles_error += f"<br>... y {len(errores_list)-5} errores más."
+                    msg += f'<br><br><b>Errores ({errores}):</b><br><div style="text-align:left; font-size:0.9em;">{detalles_error}</div>'
+                
+                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': errores == 0, # Aunque haya errores, el proceso terminó. success=False puede indicar fallo total.
+                        # Aquí, si hay importados parciales, es un "success" parcial.
+                        # Pero para el frontend, queremos que muestre el icono correcto.
+                        'message': msg,
+                        'icon': icono,
+                        'title': titulo,
+                        'reload': True # Indicar que se debe recargar la página al cerrar alerta
+                    })
+
+                # Usar el sistema de mensajes de Django, pero pasando flags para que SweetAlert lo renderice bien (HTML)
+                messages.add_message(request, messages.SUCCESS if errores == 0 else messages.WARNING, msg, extra_tags='html_safe')
+                
+                return redirect('activos:home')
+                
+            except Exception as e:
+                err_msg = f'Error al procesar el archivo: {str(e)}'
+                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': err_msg,
+                        'icon': 'error',
+                        'title': 'Error de Sistema'
+                    }, status=500)
+                messages.error(request, err_msg)
+                return redirect('activos:home')
+                
+            except Exception as e:
+                messages.error(request, f'Error al procesar el archivo: {str(e)}')
+    else:
+        form = ImportarActivosForm()
+
+    template_name = 'activos/importar_activos.html'
+    if request.GET.get('modal'):
+        template_name = 'activos/partials/importar_form.html'
+
+    return render(request, template_name, {'form': form})
 
 class ActivoCreateView(LoginRequiredMixin, CreateView):
     model = Activo
@@ -319,6 +578,12 @@ class ActivoDetailView(LoginRequiredMixin, DetailView):
     model = Activo
     template_name = 'activos/activo_detail.html'
 
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            response.status_code = 422
+        return response
+
 class ActivoUpdateView(LoginRequiredMixin, UpdateView):
     model = Activo
     form_class = ActivoForm
@@ -334,6 +599,12 @@ class ActivoUpdateView(LoginRequiredMixin, UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs['is_update'] = True
         return kwargs
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            response.status_code = 422
+        return response
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

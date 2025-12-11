@@ -1,0 +1,140 @@
+<div class="row justify-content-center">
+    <div class="col-12">
+        <div class="alert alert-info border-0 bg-info bg-opacity-10 mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            Sube un archivo Excel con la estructura correcta. Los activos con <strong>S/N</strong> duplicados
+            serán omitidos.
+        </div>
+
+        <form method="post" enctype="multipart/form-data" action="{% url 'activos:importar_activos' %}">
+            {% csrf_token %}
+
+            <div class="mb-4 text-center">
+                {% for field in form %}
+                <div class="upload-container position-relative">
+                    <!-- Input oculto -->
+                    <div class="d-none">
+                        {{ field }}
+                    </div>
+
+                    <!-- Área visual personalizada -->
+                    <div class="upload-area p-5 border-2 border-dashed rounded-3 bg-light cursor-pointer"
+                        id="uploadArea">
+                        <div class="mb-3">
+                            <i class="fas fa-file-excel text-success fa-3x"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Cargar archivo Excel</h6>
+                        <p class="text-muted small mb-0" id="fileName">Haz clic para seleccionar o arrastra el archivo
+                            aquí</p>
+                        <p class="text-muted small mt-2 fst-italic">{{ field.help_text }}</p>
+                    </div>
+
+                    {% if field.errors %}
+                    <div class="text-danger small mt-2">
+                        {{ field.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary py-2 shadow-sm">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Importar Activos
+                </button>
+                <div class="text-center mt-3">
+                    <p class="text-muted small mb-0">
+                        ¿Necesitas la plantilla?
+                        <a href="{% url 'activos:descargar_plantilla' %}"
+                            class="text-decoration-none fw-bold text-primary" target="_blank">
+                            <i class="fas fa-download me-1"></i>Descargar plantilla vacía
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+        border-color: #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+    .upload-area:hover,
+    .upload-area.dragover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa !important;
+        transform: translateY(-2px);
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    (function () {
+        // Encapsulamos para no contaminar scope global si se carga via modal multiple veces
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.querySelector('input[type="file"]');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        if (uploadArea && fileInput) {
+            // Click trigger
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            // File selection
+            fileInput.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    fileNameDisplay.textContent = this.files[0].name;
+                    fileNameDisplay.classList.add('text-success', 'fw-bold');
+                    fileNameDisplay.classList.remove('text-muted');
+
+                    // Cambiar borde a verde para feedback visual
+                    uploadArea.classList.remove('border-dashed');
+                    uploadArea.classList.add('border', 'border-success', 'bg-success', 'bg-opacity-10');
+                } else {
+                    resetView();
+                }
+            });
+
+            // Drag and Drop visual feedback
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadArea.classList.add('dragover', 'border-primary');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadArea.classList.remove('dragover', 'border-primary');
+                }, false);
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileInput.files = files;
+
+                // Trigger change event manually
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            });
+
+            function resetView() {
+                fileNameDisplay.textContent = 'Haz clic para seleccionar o arrastra el archivo aquí';
+                fileNameDisplay.classList.remove('text-success', 'fw-bold');
+                fileNameDisplay.classList.add('text-muted');
+                uploadArea.classList.add('border-dashed');
+                uploadArea.classList.remove('border', 'border-success', 'bg-success', 'bg-opacity-10');
+            }
+        }
+    })();
+</script>

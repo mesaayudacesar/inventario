@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 app_name = 'activos'
+# Configuración de URLs para Activos
 
 urlpatterns = [
     path('', views.ActivoListView.as_view(), name='home'),
@@ -9,6 +10,8 @@ urlpatterns = [
     path('logistica-dashboard/', views.logistica_dashboard, name='logistica_dashboard'),
     path('lectura-dashboard/', views.lectura_dashboard, name='lectura_dashboard'),
     path('exportar/', views.exportar_excel, name='exportar_excel'),
+    path('descargar-plantilla/', views.descargar_plantilla, name='descargar_plantilla'),
+    path('importar/', views.importar_activos, name='importar_activos'),
     path('reporte-por-sede/', views.reporte_por_sede, name='reporte_por_sede'),
     path('crear/', views.ActivoCreateView.as_view(), name='activo-create'),
     path('<int:pk>/', views.ActivoDetailView.as_view(), name='activo_detail'),

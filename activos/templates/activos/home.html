@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load activos_extras %}
+{% load activos_extras %}
 
 {% block title %}Lista de Activos{% endblock %}
 
@@ -96,9 +98,16 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="fw-bold"><i class="fas fa-boxes-stacked me-2"></i>Gestión de Activos</h1>
     {% if user.rol == 'admin' or user.rol == 'logistica' %}
-    <a href="{% url 'activos:activo-create' %}" class="btn btn-primary modal-trigger" data-title="Crear Nuevo Activo">
-        <i class="fas fa-plus me-2"></i>Nuevo Activo
-    </a>
+    <div>
+        <a href="{% url 'activos:importar_activos' %}" class="btn btn-success modal-trigger"
+            data-title="Importar Activos desde Excel">
+            <i class="fas fa-file-excel me-2"></i>Importar
+        </a>
+        <a href="{% url 'activos:activo-create' %}" class="btn btn-primary modal-trigger ms-2"
+            data-title="Crear Nuevo Activo">
+            <i class="fas fa-plus me-2"></i>Nuevo Activo
+        </a>
+    </div>
     {% endif %}
 </div>
 
@@ -187,6 +196,8 @@
             </table>
         </div>
     </div>
+    <!-- Paginación -->
+    {% include 'activos/partials/pagination.html' %}
 </div>
 
 <!-- Barra de acciones flotante -->

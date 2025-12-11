@@ -3,6 +3,12 @@ from .models import Activo, Zona, Categoria, Marca
 from django.utils import timezone
 
 
+class ImportarActivosForm(forms.Form):
+    archivo_excel = forms.FileField(
+        label='Archivo Excel (.xlsx)',
+        help_text='El archivo debe tener la misma estructura que el reporte exportado.'
+    )
+
 class CategoriaForm(forms.ModelForm):
     class Meta:
         model = Categoria
@@ -138,9 +144,11 @@ class ActivoForm(forms.ModelForm):
             self.fields['marca'].empty_label = "Seleccione una marca"
         
         # Hacer obligatorios todos los campos de la sección "Datos del Activo"
+        # Hacer obligatorios todos los campos de la sección "Datos del Activo" y asignación inicial
         campos_obligatorios = [
             'categoria', 'marca', 'activo', 'sn', 
-            'estado', 'zona'
+            'imei1', 'imei2', 'estado', 'zona',
+            'responsable', 'identificacion'
         ]
         
         for campo in campos_obligatorios:
@@ -150,12 +158,24 @@ class ActivoForm(forms.ModelForm):
         # Lógica para asignación: bloquear campos fundamentales (identidad del activo)
         # pero permitir editar campos de asignación (usuario, ubicación, etc.) incluso si ya tienen valor
         if is_assignment and self.instance.pk:
+            # Campos obligatorios para asignación según requerimiento
+            campos_obligatorios_asignacion = [
+                'cargo', 'nombres_apellidos', 'codigo_centro_costo', 
+                'centro_costo_punto', 'punto_venta', 'iccid', 'operador'
+            ]
+            for campo in campos_obligatorios_asignacion:
+                if campo in self.fields:
+                    self.fields[campo].required = True
+
             # Campos que siempre deben ser editables durante una asignación/reasignación
             assignment_fields = [
                 'documento', 'nombres_apellidos', 'responsable', 'identificacion',
                 'zona', 'cargo', 'codigo_centro_costo', 'centro_costo_punto',
-                'punto_venta', 'observacion', 'estado'
+                'punto_venta', 'observacion', 'estado', 'iccid', 'operador'
             ]
+            
+            # Asegurar que los campos obligatorios también estén en assignment_fields para que sean editables
+            # (ya están la mayoría, agregamos operador/iccid arriba a assignment_fields explícitamente)
 
             for name, field in self.fields.items():
                 # Si el campo es de asignación, saltar bloqueo (permitir edición)
