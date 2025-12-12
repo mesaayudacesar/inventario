@@ -2,12 +2,12 @@ name: Keep Render Services Alive
 
 on:
   schedule:
-    # Se ejecuta cada 14 minutos entre las 6 AM y 11:59 PM (hora de Colombia UTC-5)
+    # Se ejecuta cada 12 minutos entre las 6 AM y 10:59 PM (hora de Colombia UTC-5)
     # Colombia UTC-5 convertido a UTC:
     # 6 AM Colombia = 11 AM UTC
-    # 12 AM Colombia (medianoche) = 5 AM UTC del día siguiente
-    - cron: '*/14 11-23 * * *'  # De 6 AM a 6:59 PM (Colombia)
-    - cron: '*/14 0-4 * * *'     # De 7 PM a 11:59 PM (Colombia)
+    # 10 PM Colombia = 3 AM UTC (del día siguiente)
+    - cron: '*/12 11-23 * * *'  # De 6 AM a 6:59 PM (Colombia)
+    - cron: '*/12 0-3 * * *'    # De 7 PM a 10:59 PM (Colombia)
   workflow_dispatch: # Permite ejecutar manualmente desde GitHub
 
 jobs:
@@ -23,44 +23,21 @@ jobs:
           CURRENT_TIME=$(TZ=America/Bogota date +"%Y-%m-%d %H:%M:%S")
           echo "Hora actual en Colombia: $CURRENT_TIME"
           
-          # Verificar si estamos en horario permitido (6 AM - 12 AM)
-          # Nota: En bash [ 0 -ge 6 ] es falso, pero queremos permitir 0, 1, 2, etc. hasta las 12 PM no, hasta las 12 AM (00:00)
-          # El user dijo 6 AM a 11:59 PM.
-          # 00:00 es medianoche. ¿Debe correr a la medianoche? El cron 0-4 incluye 00:00 UTC que es 7PM.
-          # El script verifica la hora local de colombia.
-          # Si son las 23:00 (11 PM) -> OK.
-          # Si son las 00:00 (12 AM) -> El user puso "6 AM y 11:59 PM".
-          # Entonces 00:00 ya no debería correr si es estricto.
-          # Pero el cron 0-4 UTC va hasta las 4 AM UTC que son las 11 PM Colombia.
-          # Espera. 4 AM UTC = 11 PM de ayer en Colombia?
-          # Si Colombia es UTC-5.
-          # 04:00 UTC - 5 horas = 23:00 (11 PM) del día anterior. Correcto.
-          # Entonces 05:00 UTC es 00:00 (Medianoche).
-          # El cron termina en 4 UTC, o sea a las 11:xx PM.
-          # Asi que el script de bash solo necesita validar que sea >= 6.
-          # Pero espera, si el cron corre a las 0-4 UTC, en Colombia son las 7PM - 11PM.
-          # En ese rango (19 a 23), la hora es >= 6.
-          # Así que la condición `if [ $CURRENT_HOUR -ge 6 ]` cubre todo el rango de 6 AM hasta medianoche.
-          # No necesitamos `|| [ $CURRENT_HOUR -lt 0 ]` porque hour siempre es 0-23.
-          # Solo hay que asegurar que no corra de 0 a 5 AM.
-          # Pero el cron ya limita eso (no hay cron entre 5 UTC y 10 UTC).
-          # 5 UTC = 00:00 Colombia.
-          # 10 UTC = 05:00 Colombia.
-          # Así que el cron ya hace el filtro principal. El check en bash es redundante pero útil como doble check o logging.
-          
-          if [ $CURRENT_HOUR -ge 6 ]; then
+          # Verificar si estamos en horario permitido (6 AM - 10 PM)
+          # Permitimos ejecución de 06:00 a 22:59
+          if [ $CURRENT_HOUR -ge 6 ] && [ $CURRENT_HOUR -le 22 ]; then
             echo "allowed=true" >> $GITHUB_OUTPUT
-            echo "✅ Horario permitido (>= 6 AM). Procediendo con ping..."
+            echo "✅ Horario permitido (6 AM - 10 PM). Procediendo con ping..."
           else
-            # Esto pasaría si se ejecuta manualmente entre 12 AM y 5 AM
+            # Esto podría pasar si el cron corre justo a las 23:xx o fuera de rango
             echo "allowed=false" >> $GITHUB_OUTPUT
-            echo "⏸️ Fuera del horario permitido (12 AM - 6 AM). Servicios pueden dormir."
+            echo "⏸️ Fuera del horario permitido. Servicios pueden dormir."
           fi
       - name: Ping Application
         if: steps.check-time.outputs.allowed == 'true'
         run: |
           echo "🔄 Haciendo ping a la aplicación..."
-          # Usamos -L para seguir redirecciones si las hay (ej http->https)
+          # Usamos -L para seguir redirecciones
           response=$(curl -L -s -o /dev/null -w "%{http_code}" https://inventario-6hyb.onrender.com/)
           echo "Respuesta: $response"
           
@@ -74,4 +51,4 @@ jobs:
         if: steps.check-time.outputs.allowed == 'true'
         run: |
           echo "✅ Keep-alive completado exitosamente"
-          echo "Próximo ping en ~14 minutos"
+          echo "Próximo ping en ~12 minutos"
