@@ -368,7 +368,7 @@ def importar_activos(request):
             excel_file = request.FILES['archivo_excel']
             
             try:
-                wb = openpyxl.load_workbook(excel_file)
+                wb = openpyxl.load_workbook(excel_file, data_only=True)
                 ws = wb.active
                 
                 # Contadores
@@ -502,9 +502,9 @@ def importar_activos(request):
                             for campo, nuevo_valor in campos_a_verificar:
                                 valor_actual = getattr(activo_existente, campo)
                                 
-                                # Normalizar para chequeo de vacío (incluyendo "None" string, espacios, etc.)
+                                # Normalizar para chequeo de vacío (incluyendo "None" string, espacios, formulas)
                                 val_str = str(valor_actual).strip().lower() if valor_actual is not None else ""
-                                si_es_vacio = val_str == "" or val_str == "none" or val_str == "null"
+                                si_es_vacio = val_str == "" or val_str == "none" or val_str == "null" or val_str.startswith('=')
                                 
                                 if si_es_vacio and nuevo_valor:
                                     setattr(activo_existente, campo, nuevo_valor)
