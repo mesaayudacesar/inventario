@@ -174,9 +174,9 @@
                                 data-bs-toggle="modal"
                                 data-bs-target="#detalleModal"
                                 data-id="{{ movimiento.id }}"
-                                data-fecha="{{ movimiento.fecha|date:'d/m/Y H:i:s' }}"
-                                data-tipo="{{ movimiento.get_tipo_display }}"
-                                data-usuario="{{ movimiento.usuario.username }}"
+                                    data-fecha="{{ movimiento.fecha|date:'d/m/Y H:i:s' }}"
+                                    data-tipo="{{ movimiento.get_tipo_display }}"
+                                    data-usuario="{{ movimiento.usuario.username }}"
                                 data-descripcion="{{ movimiento.descripcion|default:'Sin descripción' }}"
                                 {% if movimiento.activo %}
                                     data-activo-nombre="{{ movimiento.activo.activo }}"
@@ -191,8 +191,8 @@
                                     data-activo-serial="-"
                                 {% endif %}
                             >
-                                <i class="fas fa-eye me-1"></i>Ver
-                            </button>
+                                    <i class="fas fa-eye me-1"></i>Ver
+                                </button>
 
 
                             </td>
